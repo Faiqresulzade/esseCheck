@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+.vs/
+.git/
+.gitignore
+EssayCheck/
+Yeni klasör/
+secrets/
+*.md
+*.postman_collection.json
+**/appsettings.Development.json
+**/*.user

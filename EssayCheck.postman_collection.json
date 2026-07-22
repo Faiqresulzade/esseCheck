@@ -1,0 +1,357 @@
+{
+  "info": {
+    "_postman_id": "e5f0a1b2-7c3d-4e9a-9f10-essaycheck0001",
+    "name": "EssayCheck AI API",
+    "description": "EssayCheck AI backend (.NET 8). Folders: Auth, Account, Essay, Subscription.\n\nUsage:\n1. Set the `baseUrl` variable (default https://localhost:7013). For http use http://localhost:5238.\n2. Run **Auth > Login** — accessToken & refreshToken are saved automatically.\n3. Other requests inherit Bearer {{accessToken}}. Public ones (register/login/refresh/forgot/reset/plans) use No Auth.\n\nNote: localhost uses a self-signed dev certificate — in Postman turn OFF Settings > General > SSL certificate verification.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7013" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "resetToken", "value": "" },
+    { "key": "essayId", "value": "1" },
+    { "key": "googleRtdnSecret", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Faig Rəsulzadə\",\n  \"email\": \"faig@example.com\",\n  \"password\": \"Test1234\",\n  \"confirmPassword\": \"Test1234\",\n  \"acceptTerms\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "register" ] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var j = pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('accessToken', j.token);",
+                  "  if (j.refreshToken) pm.collectionVariables.set('refreshToken', j.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"faig@example.com\",\n  \"password\": \"Test1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "login" ] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var j = pm.response.json();",
+                  "  if (j.token) pm.collectionVariables.set('accessToken', j.token);",
+                  "  if (j.refreshToken) pm.collectionVariables.set('refreshToken', j.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "refresh" ] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "logout" ] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"faig@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "forgot-password" ] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"faig@example.com\",\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"NewPass123\",\n  \"confirmPassword\": \"NewPass123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "reset-password" ] }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/auth/profile", "host": [ "{{baseUrl}}" ], "path": [ "api", "auth", "profile" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Yeni Ad Soyad\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/account/profile", "host": [ "{{baseUrl}}" ], "path": [ "api", "account", "profile" ] }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Test1234\",\n  \"newPassword\": \"NewPass123\",\n  \"confirmPassword\": \"NewPass123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/account/password", "host": [ "{{baseUrl}}" ], "path": [ "api", "account", "password" ] }
+          }
+        },
+        {
+          "name": "Delete Account (soft)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/account", "host": [ "{{baseUrl}}" ], "path": [ "api", "account" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Essay",
+      "item": [
+        {
+          "name": "Evaluate Essay",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var j = pm.response.json();",
+                  "  if (j.id) pm.collectionVariables.set('essayId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Nowadays shopping plays an important role in everybody's life. People go to shopping for different reasons. Some people do shopping as a hobby, while others go shopping for buying clothes.\",\n  \"title\": \"Shopping\",\n  \"source\": \"Text\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/essay/evaluate", "host": [ "{{baseUrl}}" ], "path": [ "api", "essay", "evaluate" ] }
+          }
+        },
+        {
+          "name": "OCR (image -> text) [Pro Plus]",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": [], "description": "Esse şəkli (jpg/png)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/essay/ocr", "host": [ "{{baseUrl}}" ], "path": [ "api", "essay", "ocr" ] }
+          }
+        },
+        {
+          "name": "History (list)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/essay/history?search=",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "essay", "history" ],
+              "query": [ { "key": "search", "value": "", "description": "Başlıqda axtarış (opsional)" } ]
+            }
+          }
+        },
+        {
+          "name": "History Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/essay/history/{{essayId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "essay", "history", "{{essayId}}" ] }
+          }
+        },
+        {
+          "name": "Delete History Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/essay/history/{{essayId}}", "host": [ "{{baseUrl}}" ], "path": [ "api", "essay", "history", "{{essayId}}" ] }
+          }
+        },
+        {
+          "name": "Delete All History",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/essay/history", "host": [ "{{baseUrl}}" ], "path": [ "api", "essay", "history" ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "Get Plans (public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/subscription/plans", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "plans" ] }
+          }
+        },
+        {
+          "name": "My Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/subscription", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription" ] }
+          }
+        },
+        {
+          "name": "Subscribe (Pro / Pro Plus)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"ProPlus\",\n  \"platform\": \"Manual\",\n  \"purchaseToken\": null,\n  \"autoRenew\": true,\n  \"durationDays\": 30\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/subscription/subscribe", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "subscribe" ] }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/subscription/cancel", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "cancel" ] }
+          }
+        },
+        {
+          "name": "Usage Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/subscription/usage", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "usage" ] }
+          }
+        },
+        {
+          "name": "Google Play - Verify Purchase",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"pro_plus_monthly\",\n  \"purchaseToken\": \"<client-dən gələn purchaseToken>\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/subscription/google/verify", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "google", "verify" ] },
+            "description": "Client Google Play Billing ilə satınalma etdikdən sonra çağırır. Backend purchaseToken-i birbaşa Google-dan təsdiqləyir. 400 = konfiqurasiya olunmayıb / etibarsız / başqa hesaba bağlıdır."
+          }
+        },
+        {
+          "name": "Google Play - RTDN Webhook (Pub/Sub push)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": {\n    \"data\": \"<base64 RTDN payload>\",\n    \"messageId\": \"123456\",\n    \"publishTime\": \"2026-07-19T00:00:00Z\"\n  },\n  \"subscription\": \"projects/your-project/subscriptions/your-sub\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/subscription/google/rtdn?secret={{googleRtdnSecret}}",
+              "host": [ "{{baseUrl}}" ],
+              "path": [ "api", "subscription", "google", "rtdn" ],
+              "query": [ { "key": "secret", "value": "{{googleRtdnSecret}}" } ]
+            },
+            "description": "Google Cloud Pub/Sub-un çağırdığı endpoint (istifadəçi tərəfindən çağırılmır). ?secret= appsettings.json-dakı GooglePlay:RtdnSharedSecret ilə eyni olmalıdır, yoxsa 401. Play Console-da RTDN topic push subscription-ı bu URL-ə (secret daxil) yönləndirilməlidir."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# Yalnız YEREL DEVELOPMENT üçün PostgreSQL. Production üçün DEPLOYMENT.md-ə bax
+# (idarə olunan Postgres xidməti — Azure Database for PostgreSQL, RDS, Neon, Supabase və s. tövsiyə olunur).
+#
+# İşlətmək: docker compose -f docker-compose.dev.yml up -d
+# Dayandırmaq (data qalır): docker compose -f docker-compose.dev.yml stop
+# Tam silmək (data da silinir): docker compose -f docker-compose.dev.yml down -v
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: essaycheck-pg-dev
+    environment:
+      POSTGRES_DB: EssayCheckDb
+      POSTGRES_PASSWORD: dev_password_change_me
+    ports:
+      - "5433:5432"
+    volumes:
+      - essaycheck-pg-data:/var/lib/postgresql/data
+
+volumes:
+  essaycheck-pg-data:

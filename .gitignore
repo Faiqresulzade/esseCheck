@@ -1,0 +1,35 @@
+# Build nəticələri
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider / VS Code
+.idea/
+*.swp
+
+# Yerli/sirr konfiqurasiya (heç vaxt commit olunmamalıdır)
+secrets/
+*.pfx
+*.key
+**/appsettings.*.local.json
+
+# .NET user-secrets ID-si csproj-dadır, faktiki sirrlər ~/.microsoft/usersecrets altındadır (bu repo-dan kənar)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Loglar
+*.log
+
+# Marketplace/tooling checkout (proyektin öz kodu deyil)
+Yeni klasör/
+
+# Köhnə default Web API template-i (solution-a daxil deyil, istifadə olunmur)
+/EssayCheck/
