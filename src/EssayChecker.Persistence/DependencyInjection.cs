@@ -1,6 +1,7 @@
 ﻿using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Domain.Entities.Users;
 using EssayChecker.Persistence.Context;
+using EssayChecker.Persistence.Identity;
 using EssayChecker.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,8 @@ public static class DependencyInjection
         })
         .AddRoles<IdentityRole<int>>()
         .AddEntityFrameworkStores<EssayDbContext>()
-        .AddDefaultTokenProviders();
+        .AddDefaultTokenProviders()
+        .AddErrorDescriber<AzerbaijaniIdentityErrorDescriber>();
 
         services.AddScoped<IEssayRepository, EssayRepository>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
