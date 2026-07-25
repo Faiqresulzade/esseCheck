@@ -33,6 +33,7 @@ public static class DependencyInjection
 
         // Fon xidmətləri
         services.AddHostedService<RefreshTokenCleanupService>();
+        services.AddHostedService<AccountPurgeService>();
 
         return services;
     }

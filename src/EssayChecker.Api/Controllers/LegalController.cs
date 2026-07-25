@@ -23,6 +23,10 @@ public class LegalController : ControllerBase
     public ContentResult TermsOfService() =>
         Content(BuildPage("İstifadə Şərtləri", TermsOfServiceBody()), "text/html; charset=utf-8");
 
+    [HttpGet("delete-account")]
+    public ContentResult DeleteAccount() =>
+        Content(BuildPage("Hesabın Silinməsi", DeleteAccountBody()), "text/html; charset=utf-8");
+
     private static string BuildPage(string title, string bodyHtml) => $$"""
         <!DOCTYPE html>
         <html lang="az">
@@ -131,6 +135,51 @@ public class LegalController : ControllerBase
         <p>Xidməti istənilən vaxt yeniləmək, dəyişdirmək və ya dayandırmaq hüququnu özümüzdə saxlayırıq.</p>
 
         <h2>8. Əlaqə</h2>
+        <p>Suallarınız üçün: <a href="mailto:__CONTACT_EMAIL__">__CONTACT_EMAIL__</a></p>
+        """.Replace("__CONTACT_EMAIL__", ContactEmail);
+
+    private static string DeleteAccountBody() => """
+        <p>EssayCheck AI, <strong>Faig Rəsulzadə</strong> tərəfindən hazırlanıb. Hesabınızı və ona bağlı
+        məlumatları silmək üçün aşağıdakı yollardan birini istifadə edə bilərsiniz.</p>
+
+        <h2>1. Tətbiq daxilində silmə (tövsiyə olunan)</h2>
+        <ol>
+          <li>EssayCheck AI tətbiqini açın və hesabınıza daxil olun.</li>
+          <li><strong>Ayarlar</strong> bölməsinə keçin.</li>
+          <li>Ən aşağıda qırmızı rənglə işarələnmiş <strong>"Hesabı sil"</strong> düyməsinə basın.</li>
+          <li>Açılan təsdiq pəncərəsində əməliyyatı təsdiqləyin.</li>
+        </ol>
+        <p>Silmə əməliyyatı <strong>dərhal</strong> həyata keçir.</p>
+
+        <h2>2. Tətbiqə daxil ola bilmirsinizsə</h2>
+        <p>Tətbiqi silmisiniz və ya hesabınıza giriş edə bilmirsinizsə, qeydiyyatdan keçdiyiniz e-mail ünvanından
+        <a href="mailto:__CONTACT_EMAIL__">__CONTACT_EMAIL__</a> ünvanına "Hesabımı sil" mövzusu ilə yazın.
+        Tələbiniz <strong>30 gün ərzində</strong> əl ilə həyata keçiriləcək.</p>
+
+        <h2>3. Hesab silindikdə nə baş verir</h2>
+        <ul>
+          <li>Hesabınıza giriş (login) imkanı <strong>dərhal və bərpaolunmaz</strong> şəkildə bağlanır.</li>
+          <li>Bütün aktiv sessiyalar (access/refresh tokenlər) dərhal etibarsız edilir.</li>
+          <li>Aktiv abunəliyiniz varsa, dayandırılır.</li>
+          <li>Profiliniz aktiv istifadəçi siyahısından çıxarılır — adınız, e-mailiniz və esse tarixçəniz artıq
+          tətbiq daxilində sizə və ya başqa heç kimə görünmür, hər hansı yeni əməliyyat üçün istifadə edilə bilməz.</li>
+        </ul>
+
+        <h2>4. Hansı məlumatlar nə qədər saxlanılır</h2>
+        <ul>
+          <li><strong>Profil məlumatları</strong> (ad, e-mail, şifrənin hash-lənmiş forması) və <strong>esse
+          tarixçəniz</strong>: hesab deaktiv statusunda ən çoxu <strong>30 gün</strong> ərzində sistemimizdən
+          tam silinir. Bu müddət yalnız fırıldaqçılığın qarşısını almaq və hüquqi öhdəlikləri yerinə yetirmək
+          üçündür.</li>
+          <li><strong>Ödəniş qeydləri:</strong> Google Play vasitəsilə edilən ödənişlərin qeydləri Google-un öz
+          sistemlərində, Google Play-in siyasətlərinə uyğun olaraq saxlanılır — bu, bizim nəzarətimizdə deyil.</li>
+          <li>30 günlük müddətdən sonra profil məlumatlarınız və esse tarixçəniz sistemimizdən <strong>bərpaolunmaz
+          şəkildə silinir</strong>.</li>
+        </ul>
+        <p>Tarixçənizi hesabı silmədən əvvəl ayrıca silmək istəyirsinizsə, tətbiqdə <strong>Ayarlar &rarr;
+        Tarixçəni sil</strong> seçimini istifadə edə bilərsiniz.</p>
+
+        <h2>5. Əlaqə</h2>
         <p>Suallarınız üçün: <a href="mailto:__CONTACT_EMAIL__">__CONTACT_EMAIL__</a></p>
         """.Replace("__CONTACT_EMAIL__", ContactEmail);
 }

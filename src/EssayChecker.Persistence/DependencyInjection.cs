@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IDailyUsageRepository, DailyUsageRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IProcessedNotificationRepository, ProcessedNotificationRepository>();
+        services.AddScoped<IAccountPurgeRepository, AccountPurgeRepository>();
 
         return services;
     }

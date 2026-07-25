@@ -60,12 +60,14 @@ public sealed class AccountService : IAccountService
 
         var now = DateTime.UtcNow;
         user.IsDeleted = true;
+        user.DeletedAt = now;
 
         var result = await _userManager.UpdateAsync(user);
         if (!result.Succeeded)
             return AuthResult.Failure(result.Errors.Select(e => e.Description).ToArray());
 
-        // Sessiyaları və abunəlikləri bağla (soft delete — məlumat qalır).
+        // Sessiyaları və abunəlikləri bağla (soft delete — 30 gün sonra AccountPurgeService
+        // tərəfindən bərpaolunmaz silinəcək, bax /legal/delete-account səhifəsi).
         await _refreshTokens.RevokeAllAsync(userId, now, cancellationToken);
         await _subscriptions.DeactivateAllAsync(userId, now, cancellationToken);
 
