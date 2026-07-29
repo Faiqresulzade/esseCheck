@@ -23,8 +23,13 @@ public sealed class OpenRouterSettings
 
     public float Temperature { get; set; } = 0.2f;
 
+    /// <summary>
+    /// Çıxış token limiti. Yüksək dəyər generasiya vaxtını artırır (autoregressive modellərdə
+    /// cavab vaxtı çıxış token sayı ilə düz mütənasibdir) — 5000 simvollu maksimum esse üçün
+    /// 4096 kifayət qədər genişdir, artırma performansı əhəmiyyətli dərəcədə pisləşdirir.
+    /// </summary>
     [Range(1, 100000)]
-    public int MaxTokens { get; set; } = 10000;
+    public int MaxTokens { get; set; } = 4096;
 
     /// <summary>OpenRouter reytinqləri üçün opsional başlıqlar.</summary>
     public string? Referer { get; set; }

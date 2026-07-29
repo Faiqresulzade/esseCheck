@@ -18,8 +18,12 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAccountService, AccountService>();
 
-        // Essay / AI (OpenRouter)
-        services.AddHttpClient<OpenRouterClient>();
+        // Essay / AI (OpenRouter) — timeout müəyyənləşdirilib ki, AI yavaşlasa
+        // istifadəçi sonsuz gözləmək əvəzinə təmiz xəta (503) alsın.
+        services.AddHttpClient<OpenRouterClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
         services.AddScoped<IEssayEvaluator, OpenRouterEssayEvaluator>();
         services.AddScoped<IOcrService, OpenRouterOcrService>();
         services.AddScoped<IEssayService, EssayService>();

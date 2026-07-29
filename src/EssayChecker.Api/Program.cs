@@ -152,11 +152,9 @@ using (var scope = app.Services.CreateScope())
 
 app.UseExceptionHandler();
 
-//if (app.Environment.IsDevelopment())
-//{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-//}
+// Qəsdən bütün mühitlərdə (production daxil) açıqdır.
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
