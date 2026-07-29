@@ -1,0 +1,23 @@
+name: Keep Render Backend Awake
+
+# Render-in FREE planı 15 dəqiqə istifadəsizlikdən sonra serveri söndürür və
+# sonrakı ilk sorğu konteyneri yenidən oyandırmaq üçün onlarla saniyə çəkir.
+# Bu workflow hər 10 dəqiqədən bir /health endpoint-inə yüngül sorğu göndərib
+# serveri daim "oyaq" saxlayır (15 dəqiqəlik limitə çatmadan, təhlükəsizlik marjı ilə).
+#
+# Qeyd: GitHub scheduled workflow-ların dəqiq vaxtını təmin etmir (bir neçə
+# dəqiqə gecikə bilər) — buna görə interval 15 deyil, 10 dəqiqə seçilib.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # GitHub Actions səhifəsindən əl ilə də işə salına bilər
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          curl -sS --max-time 90 -o /dev/null -w "HTTP %{http_code} - %{time_total}s\n" \
+            https://essaycheck-api.onrender.com/health || echo "Sorğu uğursuz oldu, növbəti dövrədə yenidən cəhd ediləcək"
