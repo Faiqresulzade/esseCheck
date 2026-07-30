@@ -1,14 +1,19 @@
+using System.Diagnostics;
 using System.Text.Json;
 using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Essays;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Domain.Enums;
 using EssayChecker.Infrastructure.Ai;
+using Microsoft.Extensions.Logging;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
 
 internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 {
+    /// <summary>Cəmi cəhd sayı (1 əsl + 1 təkrar). Sonsuz retry-in qarşısını almaq üçün sabit və kiçikdir.</summary>
+    private const int MaxAttempts = 2;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -16,13 +21,16 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 
     private readonly OpenRouterClient _client;
     private readonly Application.Settings.OpenRouterSettings _settings;
+    private readonly ILogger<OpenRouterEssayEvaluator> _logger;
 
     public OpenRouterEssayEvaluator(
         OpenRouterClient client,
-        Microsoft.Extensions.Options.IOptions<Application.Settings.OpenRouterSettings> options)
+        Microsoft.Extensions.Options.IOptions<Application.Settings.OpenRouterSettings> options,
+        ILogger<OpenRouterEssayEvaluator> logger)
     {
         _client = client;
         _settings = options.Value;
+        _logger = logger;
     }
 
     public async Task<EssayEvaluationData> EvaluateAsync(string essayText, CancellationToken cancellationToken = default)
@@ -33,22 +41,61 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             new ChatMessage { Role = "user", Content = essayText }
         };
 
-        var raw = await _client.CompleteAsync(_settings.Model, messages, cancellationToken);
+        Exception? lastError = null;
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        {
+            var attemptStart = stopwatch.Elapsed;
+            try
+            {
+                var raw = await _client.CompleteAsync(_settings.Model, messages, cancellationToken);
+                var dto = ParseDto(raw);
+
+                if (attempt > 1)
+                {
+                    _logger.LogWarning(
+                        "OpenRouter essay evaluation succeeded on retry (attempt {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms, cəmi {TotalMs}ms).",
+                        attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
+                }
+
+                return MapToResult(dto);
+            }
+            catch (JsonException ex)
+            {
+                lastError = ex;
+                _logger.LogWarning(ex,
+                    "OpenRouter cavabı JSON parse edilmədi (cəhd {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms).",
+                    attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
+            }
+            catch (AiServiceException ex) when (ex.IsTransient)
+            {
+                lastError = ex;
+                _logger.LogWarning(ex,
+                    "OpenRouter keçici xəta verdi (cəhd {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms).",
+                    attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
+            }
+            // Transient olmayan AiServiceException (məs. konfiqurasiya xətası) burada tutulmur —
+            // təkrar cəhd mənasızdır, dərhal yuxarı ötürülür.
+        }
+
+        // Bura yalnız bütün MaxAttempts cəhdi JsonException/keçici xəta ilə bitəndə çatılır.
+        // Həmişə AiServiceException atırıq ki, GlobalExceptionHandler düzgün (503) cavab versin.
+        throw new AiServiceException(
+            $"AI qiymətləndirməsi {MaxAttempts} cəhddən sonra uğursuz oldu: {lastError?.Message}",
+            isTransient: true,
+            innerException: lastError);
+    }
+
+    private AiEssayDto ParseDto(string raw)
+    {
         var json = ExtractJson(raw);
+        var dto = JsonSerializer.Deserialize<AiEssayDto>(json, JsonOptions);
+        return dto ?? throw new AiServiceException("AI cavabı boş qayıtdı.", isTransient: true);
+    }
 
-        AiEssayDto? dto;
-        try
-        {
-            dto = JsonSerializer.Deserialize<AiEssayDto>(json, JsonOptions);
-        }
-        catch (JsonException ex)
-        {
-            throw new AiServiceException($"AI cavabı düzgün JSON deyil: {ex.Message}", innerException: ex);
-        }
-
-        if (dto is null)
-            throw new AiServiceException("AI cavabı boş qayıtdı.");
-
+    private static EssayEvaluationData MapToResult(AiEssayDto dto)
+    {
         if (string.Equals(dto.Status, "invalid", StringComparison.OrdinalIgnoreCase))
         {
             return new EssayEvaluationData

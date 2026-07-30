@@ -21,7 +21,11 @@ public sealed class OpenRouterSettings
     [Required]
     public string OcrModel { get; set; } = null!;
 
-    public float Temperature { get; set; } = 0.2f;
+    /// <summary>
+    /// 0 = maksimum determinizm. Qiymətləndirmə subyektiv "yaradıcılıq" deyil, sabit rubrikaya
+    /// əsaslanan ölçmədir — eyni esse hər dəfə eyni nəticəni verməlidir.
+    /// </summary>
+    public float Temperature { get; set; } = 0f;
 
     /// <summary>
     /// Çıxış token limiti. Yüksək dəyər generasiya vaxtını artırır (autoregressive modellərdə
