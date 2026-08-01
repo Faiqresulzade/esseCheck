@@ -11,9 +11,6 @@ namespace EssayChecker.Infrastructure.Services.Essays;
 
 internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 {
-    /// <summary>Cəmi cəhd sayı (1 əsl + 1 təkrar). Sonsuz retry-in qarşısını almaq üçün sabit və kiçikdir.</summary>
-    private const int MaxAttempts = 2;
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -41,22 +38,31 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             new ChatMessage { Role = "user", Content = essayText }
         };
 
+        // Sırayla cəhd ediləcək modellər: əvvəlcə pulsuz, o uğursuz olarsa (və konfiqurasiya
+        // olunubsa) bir dəfə pullu ehtiyat model. Siyahı sabit və ən çoxu 2 elementdir —
+        // buna görə aşağıdakı foreach struktur olaraq sonsuz loopa düşə bilməz.
+        var modelsToTry = string.IsNullOrWhiteSpace(_settings.FallbackModel)
+            ? new[] { _settings.Model }
+            : new[] { _settings.Model, _settings.FallbackModel };
+
         Exception? lastError = null;
         var stopwatch = Stopwatch.StartNew();
 
-        for (var attempt = 1; attempt <= MaxAttempts; attempt++)
+        for (var i = 0; i < modelsToTry.Length; i++)
         {
+            var model = modelsToTry[i];
+            var isFallback = i > 0;
             var attemptStart = stopwatch.Elapsed;
             try
             {
-                var raw = await _client.CompleteAsync(_settings.Model, messages, cancellationToken);
+                var raw = await _client.CompleteAsync(model, messages, cancellationToken);
                 var dto = ParseDto(raw);
 
-                if (attempt > 1)
+                if (isFallback)
                 {
                     _logger.LogWarning(
-                        "OpenRouter essay evaluation succeeded on retry (attempt {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms, cəmi {TotalMs}ms).",
-                        attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
+                        "Pulsuz model uğursuz olduğu üçün pullu ehtiyat modelə ({Model}) yönləndirildi və uğurlu oldu (bu cəhd {ElapsedMs}ms, cəmi {TotalMs}ms).",
+                        model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
                 }
 
                 return MapToResult(dto);
@@ -65,24 +71,24 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             {
                 lastError = ex;
                 _logger.LogWarning(ex,
-                    "OpenRouter cavabı JSON parse edilmədi (cəhd {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms).",
-                    attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
+                    "OpenRouter cavabı JSON parse edilmədi (model {Model}, bu cəhd {ElapsedMs}ms).",
+                    model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
             }
             catch (AiServiceException ex) when (ex.IsTransient)
             {
                 lastError = ex;
                 _logger.LogWarning(ex,
-                    "OpenRouter keçici xəta verdi (cəhd {Attempt}/{MaxAttempts}, bu cəhd {ElapsedMs}ms).",
-                    attempt, MaxAttempts, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
+                    "OpenRouter keçici xəta verdi (model {Model}, bu cəhd {ElapsedMs}ms).",
+                    model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
             }
             // Transient olmayan AiServiceException (məs. konfiqurasiya xətası) burada tutulmur —
-            // təkrar cəhd mənasızdır, dərhal yuxarı ötürülür.
+            // ehtiyat modelə keçmək mənasızdır, dərhal yuxarı ötürülür.
         }
 
-        // Bura yalnız bütün MaxAttempts cəhdi JsonException/keçici xəta ilə bitəndə çatılır.
+        // Bura yalnız bütün modellər JsonException/keçici xəta ilə bitəndə çatılır.
         // Həmişə AiServiceException atırıq ki, GlobalExceptionHandler düzgün (503) cavab versin.
         throw new AiServiceException(
-            $"AI qiymətləndirməsi {MaxAttempts} cəhddən sonra uğursuz oldu: {lastError?.Message}",
+            $"AI qiymətləndirməsi bütün modellərdən ({string.Join(", ", modelsToTry)}) sonra uğursuz oldu: {lastError?.Message}",
             isTransient: true,
             innerException: lastError);
     }

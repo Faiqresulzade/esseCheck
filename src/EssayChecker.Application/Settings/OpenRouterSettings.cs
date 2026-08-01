@@ -22,6 +22,13 @@ public sealed class OpenRouterSettings
     public string OcrModel { get; set; } = null!;
 
     /// <summary>
+    /// Pulsuz model (Model) uğursuz olduqda (JSON xətası/keçici xəta) müraciət olunacaq pullu,
+    /// ehtiyat model. Opsionaldır — boş qalarsa fallback aktivləşmir. Qəsdən [Required] deyil ki,
+    /// bu doldurulmayanda tətbiqin qalan hissəsi bloklanmasın (GooglePlaySettings ilə eyni prinsip).
+    /// </summary>
+    public string? FallbackModel { get; set; }
+
+    /// <summary>
     /// 0 = maksimum determinizm. Qiymətləndirmə subyektiv "yaradıcılıq" deyil, sabit rubrikaya
     /// əsaslanan ölçmədir — eyni esse hər dəfə eyni nəticəni verməlidir.
     /// </summary>
