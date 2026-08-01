@@ -30,7 +30,9 @@ internal sealed class GlobalExceptionHandler : IExceptionHandler
         };
 
         httpContext.Response.StatusCode = status;
-        await httpContext.Response.WriteAsJsonAsync(new { message }, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(
+            AuthResult.Failure(message),
+            cancellationToken);
         return true;
     }
 }

@@ -15,5 +15,10 @@ public class AuthResult
         new() { Succeeded = true, Message = message };
 
     public static AuthResult Failure(params string[] errors) =>
-        new() { Succeeded = false, Errors = errors };
+        new()
+        {
+            Succeeded = false,
+            Message = errors.Length > 0 ? errors[0] : "Naməlum xəta baş verdi.",
+            Errors = errors
+        };
 }

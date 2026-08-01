@@ -21,6 +21,25 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// DataAnnotations validasiyası uğursuz olanda (boş email, zəif şifrə, uyğun olmayan
+// şifrə təsdiqi və s.) [ApiController]-in defolt ingiliscə ValidationProblemDetails
+// formatı əvəzinə, tətbiqin qalan hissəsi ilə eyni { message, errors } formasını qaytarır —
+// frontend hər xəta halında eyni formanı gözləyə bilsin deyə.
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .ToArray();
+
+        return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(
+            EssayChecker.Application.Common.AuthResult.Failure(errors));
+    };
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

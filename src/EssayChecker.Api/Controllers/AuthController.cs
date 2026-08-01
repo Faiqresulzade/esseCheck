@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Auth;
 using EssayChecker.Application.DTOs.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -41,12 +42,14 @@ public class AuthController : ControllerBase
         {
             return StatusCode(StatusCodes.Status423Locked, new
             {
+                succeeded = false,
                 message = "Hesabınız çoxlu yanlış cəhd səbəbindən müvəqqəti bloklanıb.",
+                errors = new[] { "Hesabınız çoxlu yanlış cəhd səbəbindən müvəqqəti bloklanıb." },
                 lockoutEndsAt = outcome.LockoutEndsAt
             });
         }
 
-        return Unauthorized(new { message = "E-mail və ya şifrə yanlışdır." });
+        return Unauthorized(AuthResult.Failure("E-mail və ya şifrə yanlışdır."));
     }
 
     /// <summary>Refresh token ilə yeni access + refresh token alır (rotasiya).</summary>
@@ -55,7 +58,7 @@ public class AuthController : ControllerBase
     {
         var response = await _authService.RefreshTokenAsync(request.RefreshToken, cancellationToken);
         if (response is null)
-            return Unauthorized(new { message = "Refresh token etibarsız və ya vaxtı bitib." });
+            return Unauthorized(AuthResult.Failure("Refresh token etibarsız və ya vaxtı bitib."));
 
         return Ok(response);
     }
