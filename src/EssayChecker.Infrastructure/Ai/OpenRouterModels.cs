@@ -15,6 +15,21 @@ internal sealed class ChatCompletionRequest
 
     [JsonPropertyName("max_tokens")]
     public int MaxTokens { get; set; }
+
+    /// <summary>
+    /// Bəzi (əsasən pulsuz) modellər "reasoning" (daxili düşünmə) modelləridir və cavab yazmazdan
+    /// əvvəl min-min token sərf edərək düşünürlər — uzun essedə (~600 söz) bu, bütün MaxTokens
+    /// büdcəsini yeyib əsl JSON cavabını heç yazdırmır (content: null, finish_reason: "length").
+    /// Reasoning-i söndürmək bunun qarşısını alır və həm sürəti, həm etibarlılığı artırır.
+    /// </summary>
+    [JsonPropertyName("reasoning")]
+    public ReasoningOptions Reasoning { get; set; } = new();
+}
+
+internal sealed class ReasoningOptions
+{
+    [JsonPropertyName("enabled")]
+    public bool Enabled { get; set; } = false;
 }
 
 internal sealed class ChatMessage

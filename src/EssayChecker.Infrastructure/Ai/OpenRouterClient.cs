@@ -83,7 +83,7 @@ internal sealed class OpenRouterClient
 
             var content = parsed?.Choices is { Count: > 0 } ? parsed.Choices[0].Message?.Content : null;
             if (string.IsNullOrWhiteSpace(content))
-                throw new AiServiceException("OpenRouter returned an empty response.");
+                throw new AiServiceException("OpenRouter returned an empty response.", isTransient: true);
 
             return content;
         }
