@@ -19,11 +19,22 @@ public sealed class EmailSettings
     [EmailAddress]
     public string SenderEmail { get; set; } = null!;
 
-    [Required]
-    public string Username { get; set; } = null!;
+    /// <summary>Yalnız SMTP rejimi üçün lazımdır (Brevo istifadə olunanda boş qala bilər).</summary>
+    public string? Username { get; set; }
 
-    [Required]
-    public string Password { get; set; } = null!;
+    /// <summary>Yalnız SMTP rejimi üçün lazımdır (Brevo istifadə olunanda boş qala bilər).</summary>
+    public string? Password { get; set; }
 
     public bool EnableSsl { get; set; } = true;
+
+    /// <summary>
+    /// Brevo (HTTP API) açarı. Doldurulubsa e-mail SMTP əvəzinə Brevo-nun HTTPS API-si ilə
+    /// göndərilir. Bu vacibdir, çünki Render kimi hosting platformaları çıxan SMTP portlarını
+    /// (25/465/587) bloklayır — HTTPS (443) isə heç vaxt bloklanmır.
+    /// Boş qalarsa sistem avtomatik SMTP rejimində işləyir (lokal development üçün əlverişlidir).
+    /// </summary>
+    public string? BrevoApiKey { get; set; }
+
+    [Url]
+    public string BrevoBaseUrl { get; set; } = "https://api.brevo.com/v3/smtp/email";
 }
