@@ -6,6 +6,7 @@ using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EssayChecker.Infrastructure.Services.Users;
@@ -18,6 +19,7 @@ public sealed class AuthService : IAuthService
     private readonly IRefreshTokenRepository _refreshTokens;
     private readonly AppSettings _appSettings;
     private readonly JwtSettings _jwtSettings;
+    private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         UserManager<AppUser> userManager,
@@ -25,7 +27,8 @@ public sealed class AuthService : IAuthService
         IEmailService emailService,
         IRefreshTokenRepository refreshTokens,
         IOptions<AppSettings> appSettings,
-        IOptions<JwtSettings> jwtSettings)
+        IOptions<JwtSettings> jwtSettings,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _jwtService = jwtService;
@@ -33,6 +36,7 @@ public sealed class AuthService : IAuthService
         _refreshTokens = refreshTokens;
         _appSettings = appSettings.Value;
         _jwtSettings = jwtSettings.Value;
+        _logger = logger;
     }
 
     public async Task<AuthResult> RegisterAsync(
@@ -146,11 +150,21 @@ public sealed class AuthService : IAuthService
                 $"{_appSettings.ResetPasswordUrl}?email={Uri.EscapeDataString(user.Email!)}" +
                 $"&token={Uri.EscapeDataString(token)}";
 
-            await _emailService.SendAsync(
-                user.Email!,
-                "Şifrə sıfırlama",
-                BuildResetPasswordEmail(user.FullName, resetLink),
-                cancellationToken);
+            // E-mail göndərilməsi bu cavabı bloklamamalıdır: cavab mesajı artıq təhlükəsizlik
+            // səbəbindən e-mail-in mövcudluğunu bildirmir, ona görə SMTP yavaş/uğursuz olsa belə
+            // istifadəçi sonsuz "loading" görməməlidir — xəta yalnız loglanır.
+            try
+            {
+                await _emailService.SendAsync(
+                    user.Email!,
+                    "Şifrə sıfırlama",
+                    BuildResetPasswordEmail(user.FullName, resetLink),
+                    cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Şifrə sıfırlama e-maili göndərilmədi (istifadəçi: {UserId}).", user.Id);
+            }
         }
 
         return AuthResult.Success(
@@ -172,11 +186,20 @@ public sealed class AuthService : IAuthService
         // Şifrə dəyişdi — bütün refresh token-ləri etibarsız et.
         await _refreshTokens.RevokeAllAsync(user.Id, DateTime.UtcNow, cancellationToken);
 
-        await _emailService.SendAsync(
-            user.Email!,
-            "Şifrəniz dəyişdirildi",
-            BuildPasswordChangedEmail(user.FullName),
-            cancellationToken);
+        // Şifrə artıq uğurla dəyişdi — bunu bildirən e-mail sadəcə məlumatlandırıcıdır, SMTP
+        // yavaş/uğursuz olsa belə əməliyyatın uğurlu nəticəsini bloklamamalıdır.
+        try
+        {
+            await _emailService.SendAsync(
+                user.Email!,
+                "Şifrəniz dəyişdirildi",
+                BuildPasswordChangedEmail(user.FullName),
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Şifrə dəyişdirildi bildiriş e-maili göndərilmədi (istifadəçi: {UserId}).", user.Id);
+        }
 
         return AuthResult.Success("Şifrəniz uğurla dəyişdirildi.");
     }

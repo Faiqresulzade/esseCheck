@@ -33,9 +33,16 @@ public sealed class EmailService : IEmailService
         using var client = new SmtpClient(_settings.Host, _settings.Port)
         {
             EnableSsl = _settings.EnableSsl,
-            Credentials = new NetworkCredential(_settings.Username, _settings.Password)
+            Credentials = new NetworkCredential(_settings.Username, _settings.Password),
+            // Defolt 100 saniyəlik SmtpClient.Timeout istifadəçini çox uzun "loading" vəziyyətində
+            // saxlayır (məs. hosting mühitində SMTP portu yavaşdırsa/bloklasa). 15 saniyə kifayətdir —
+            // adi Gmail SMTP əlaqəsi bundan qat-qat tez qurulur.
+            Timeout = 15000
         };
 
-        await client.SendMailAsync(message, cancellationToken);
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        await client.SendMailAsync(message, linkedCts.Token);
     }
 }
