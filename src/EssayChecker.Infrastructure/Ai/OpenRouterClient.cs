@@ -67,7 +67,10 @@ internal sealed class OpenRouterClient
             if (!response.IsSuccessStatusCode)
             {
                 var status = (int)response.StatusCode;
-                var isTransient = status == 429 || status >= 500;
+                // 402 = kredit qurtarıb ("Payment Required") — bu, əsas (pullu) model üçün
+                // ən çox rast gəlinən uğursuzluq halıdır və ehtiyat (pulsuz) modelə keçməyə
+                // əsas verir, ona görə keçici sayılır.
+                var isTransient = status == 402 || status == 429 || status >= 500;
                 throw new AiServiceException($"OpenRouter error {status}: {body}", isTransient);
             }
 

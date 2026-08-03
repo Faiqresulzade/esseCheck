@@ -13,7 +13,11 @@ public sealed class OpenRouterSettings
     [Url]
     public string BaseUrl { get; set; } = "https://openrouter.ai/api/v1/chat/completions";
 
-    /// <summary>Esse qiymətləndirmə üçün model (OpenRouter model id).</summary>
+    /// <summary>
+    /// Esse qiymətləndirmə üçün əsas model (OpenRouter model id). Keyfiyyət/etibarlılıq üçün
+    /// qəsdən pullu model istifadə olunur — pulsuz modellər auto-router randomluğu və
+    /// "reasoning" token israfı kimi qeyri-sabitliklər göstərir.
+    /// </summary>
     [Required]
     public string Model { get; set; } = null!;
 
@@ -22,9 +26,11 @@ public sealed class OpenRouterSettings
     public string OcrModel { get; set; } = null!;
 
     /// <summary>
-    /// Pulsuz model (Model) uğursuz olduqda (JSON xətası/keçici xəta) müraciət olunacaq pullu,
-    /// ehtiyat model. Opsionaldır — boş qalarsa fallback aktivləşmir. Qəsdən [Required] deyil ki,
-    /// bu doldurulmayanda tətbiqin qalan hissəsi bloklanmasın (GooglePlaySettings ilə eyni prinsip).
+    /// Əsas model (Model) uğursuz olduqda (JSON xətası, keçici xəta, ya da OpenRouter
+    /// kreditinin bitməsi — 402) müraciət olunacaq ehtiyat model. Qəsdən pulsuz model seçilib
+    /// ki, kredit qurtaranda xidmət tamamilə dayanmasın. Opsionaldır — boş qalarsa fallback
+    /// aktivləşmir. Qəsdən [Required] deyil ki, bu doldurulmayanda tətbiqin qalan hissəsi
+    /// bloklanmasın (GooglePlaySettings ilə eyni prinsip).
     /// </summary>
     public string? FallbackModel { get; set; }
 
