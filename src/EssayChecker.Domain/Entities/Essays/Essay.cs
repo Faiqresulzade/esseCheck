@@ -27,6 +27,9 @@ public class Essay
 
     public EssayInputSource InputSource { get; set; }
 
+    /// <summary>Hansı sinif meyarına (9 və ya 11) görə qiymətləndirilib.</summary>
+    public GradeLevel Grade { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public EssayStatistics Statistics { get; set; } = new();

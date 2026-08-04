@@ -57,7 +57,8 @@ public sealed class EssayRepository : IEssayRepository
                 e.Title,
                 e.CreatedAt,
                 e.WordCount,
-                e.TotalScore))
+                e.TotalScore,
+                e.Grade))
             .ToListAsync(cancellationToken);
 
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);

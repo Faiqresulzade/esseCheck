@@ -1,3 +1,5 @@
+using EssayChecker.Domain.Enums;
+
 namespace EssayChecker.Application.DTOs.Essays;
 
 public sealed record EssayListItemResponse(
@@ -5,4 +7,5 @@ public sealed record EssayListItemResponse(
     string Title,
     DateTime CreatedAt,
     int WordCount,
-    double TotalScore);
+    double TotalScore,
+    GradeLevel Grade);

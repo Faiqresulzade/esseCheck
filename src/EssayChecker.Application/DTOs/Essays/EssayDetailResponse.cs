@@ -7,6 +7,7 @@ public sealed record EssayDetailResponse(
     string Title,
     DateTime CreatedAt,
     EssayInputSource Source,
+    GradeLevel Grade,
     int WordCount,
     int AccuracyPercent,
     double TotalScore,

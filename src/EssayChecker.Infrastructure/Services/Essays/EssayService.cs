@@ -25,7 +25,7 @@ public sealed class EssayService : IEssayService
         EvaluateEssayRequest request,
         CancellationToken cancellationToken = default)
     {
-        var data = await _evaluator.EvaluateAsync(request.Text, cancellationToken);
+        var data = await _evaluator.EvaluateAsync(request.Text, request.Grade, cancellationToken);
 
         if (!data.IsEssay)
             return new EvaluateEssayResult(false, data.InvalidReason, null);
@@ -40,6 +40,7 @@ public sealed class EssayService : IEssayService
             TotalScore = data.Scores.Total,
             AccuracyPercent = (int)Math.Round(data.Scores.Total / 5.0 * 100),
             InputSource = request.Source,
+            Grade = request.Grade,
             CreatedAt = DateTime.UtcNow,
             Statistics = new EssayStatistics
             {
@@ -119,6 +120,7 @@ public sealed class EssayService : IEssayService
         e.Title,
         e.CreatedAt,
         e.InputSource,
+        e.Grade,
         e.WordCount,
         e.AccuracyPercent,
         e.TotalScore,

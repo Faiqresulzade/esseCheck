@@ -23,6 +23,10 @@ public class EssayConfiguration : IEntityTypeConfiguration<Essay>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(e => e.Grade)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+
         builder.Property(e => e.CreatedAt).IsRequired();
 
         builder.HasOne<AppUser>()

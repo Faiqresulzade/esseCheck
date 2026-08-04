@@ -16,4 +16,12 @@ public sealed class EvaluateEssayRequest
 
     /// <summary>Mətnin mənbəyi: birbaşa yazılıb (Text) yoxsa şəkildən oxunub (Image).</summary>
     public EssayInputSource Source { get; set; } = EssayInputSource.Text;
+
+    /// <summary>
+    /// Hansı sinif üçün qiymətləndirilir (9 və ya 11) — DİM meyarları (minimum söz sayı və s.)
+    /// sinifə görə fərqləndiyi üçün AI-a göndərilən promt bu dəyərə görə seçilir.
+    /// </summary>
+    [Required(ErrorMessage = "Sinif seçilməlidir.")]
+    [EnumDataType(typeof(GradeLevel), ErrorMessage = "Sinif dəyəri etibarsızdır.")]
+    public GradeLevel Grade { get; set; }
 }
