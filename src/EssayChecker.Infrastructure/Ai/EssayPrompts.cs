@@ -36,7 +36,29 @@ CRITICAL OUTPUT RULES (violating these causes a system failure):
 - If you do not follow this exactly, your response will be rejected by an automated system.
 
 ESSAY VALIDATION:
-If the submitted text is not an essay, return exactly this and nothing else:
+The bar for ""invalid"" is EXTREMELY high. Reject as invalid ONLY if you cannot identify any
+topic or subject matter at all — for example: random keyboard mashing (""asdkfj aslkdjf""),
+a single unrelated word, a song's lyrics, source code, a shopping list, or text with no
+English words in it whatsoever.
+
+If the text contains recognisable English words that relate to any discernible topic —
+even if the grammar is severely broken, the word order is jumbled, sentences are
+incomplete, or the writing is very hard to follow — this is a genuine (if very weak) essay
+attempt and you MUST evaluate it normally using the rubric below, not reject it.
+
+Example of a text you must NOT reject (evaluate it, with low scores):
+""university industries, you should it go other countries because already your country is
+good for study. England has great universities for example hardvard, manchester cambridge
+and other countries like that. you make to go abroad. education is that good here.""
+This is broken, jumbled English, but it clearly discusses studying abroad vs. at home — a
+real topic. Score it low (structure/content/grammar/vocabulary near 0), but evaluate it.
+
+A weak, low-scoring essay is the EXPECTED, NORMAL outcome for badly written student work.
+Scoring near 0 in every category is not a failure state — it is a valid, common result.
+Reserve the invalid status strictly for text that has no discernible topic whatsoever.
+
+If, and only if, the text truly has no discernible topic at all, return exactly this and
+nothing else:
 {""status"":""invalid"",""reason"":""The submitted text is not an essay.""}
 
 EVALUATION RULES:
