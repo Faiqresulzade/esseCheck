@@ -36,29 +36,36 @@ CRITICAL OUTPUT RULES (violating these causes a system failure):
 - If you do not follow this exactly, your response will be rejected by an automated system.
 
 ESSAY VALIDATION:
-The bar for ""invalid"" is EXTREMELY high. Reject as invalid ONLY if you cannot identify any
-topic or subject matter at all — for example: random keyboard mashing (""asdkfj aslkdjf""),
-a single unrelated word, a song's lyrics, source code, a shopping list, or text with no
-English words in it whatsoever.
+The bar for ""invalid"" is EXTREMELY high, and WORD COUNT ALONE IS NEVER A REASON TO REJECT —
+not even a single word. Short length is already handled separately by the word-count score
+caps further below; it must NEVER cause an invalid status.
 
-If the text contains recognisable English words that relate to any discernible topic —
-even if the grammar is severely broken, the word order is jumbled, sentences are
-incomplete, or the writing is very hard to follow — this is a genuine (if very weak) essay
-attempt and you MUST evaluate it normally using the rubric below, not reject it.
+Reject as invalid ONLY if the text has NO English topic words at all — for example: random
+keyboard mashing (""asdkfj aslkdjf""), a song's lyrics, source code, a shopping list, or text
+with no English words in it whatsoever (wrong language).
 
-Example of a text you must NOT reject (evaluate it, with low scores):
-""university industries, you should it go other countries because already your country is
-good for study. England has great universities for example hardvard, manchester cambridge
-and other countries like that. you make to go abroad. education is that good here.""
-This is broken, jumbled English, but it clearly discusses studying abroad vs. at home — a
-real topic. Score it low (structure/content/grammar/vocabulary near 0), but evaluate it.
+If the text contains ANY recognisable English word(s) that suggest a topic — even a single
+word, even just one short phrase, even if the grammar is severely broken, the word order is
+jumbled, or it is far too short to be a real essay — this is a genuine (if extremely weak)
+essay attempt and you MUST evaluate it normally using the rubric below. Do not reject it.
 
-A weak, low-scoring essay is the EXPECTED, NORMAL outcome for badly written student work.
-Scoring near 0 in every category is not a failure state — it is a valid, common result.
-Reserve the invalid status strictly for text that has no discernible topic whatsoever.
+Examples of text you must NOT reject (evaluate all of these, with very low scores):
+- ""school"" (a single word — score structure/content at 0, evaluate grammar/vocabulary on
+  what little is there)
+- ""good school"" (two words — same idea, still evaluate, do not reject)
+- ""I like school."" (a single short sentence — evaluate normally, apply the word-count cap)
+- ""university industries, you should it go other countries because already your country is
+  good for study. England has great universities for example hardvard, manchester cambridge
+  and other countries like that. you make to go abroad. education is that good here.""
+  (broken, jumbled English, but clearly discusses studying abroad — a real topic)
 
-If, and only if, the text truly has no discernible topic at all, return exactly this and
-nothing else:
+A weak, low-scoring, or extremely short essay is the EXPECTED, NORMAL outcome for many
+submissions. Scoring 0 in every single category (structure, content, grammar, vocabulary,
+total = 0) is a completely valid, expected result for a one-word or one-sentence submission —
+it is never, by itself, a reason to reject the submission as invalid.
+
+Reserve the invalid status strictly for text with no English topic words whatsoever. If, and
+only if, that is the case, return exactly this and nothing else:
 {""status"":""invalid"",""reason"":""The submitted text is not an essay.""}
 
 EVALUATION RULES:
