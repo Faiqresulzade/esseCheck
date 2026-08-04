@@ -22,21 +22,30 @@ public sealed class SubscriptionService : ISubscriptionService
     private readonly IGooglePlayPurchaseVerifier _googleVerifier;
     private readonly IProcessedNotificationRepository _processedNotifications;
     private readonly GooglePlaySettings _googlePlaySettings;
+    private readonly TestingSettings _testingSettings;
 
     public SubscriptionService(
         ISubscriptionRepository repository,
         IGooglePlayPurchaseVerifier googleVerifier,
         IProcessedNotificationRepository processedNotifications,
-        IOptions<GooglePlaySettings> googlePlaySettings)
+        IOptions<GooglePlaySettings> googlePlaySettings,
+        IOptions<TestingSettings> testingSettings)
     {
         _repository = repository;
         _googleVerifier = googleVerifier;
         _processedNotifications = processedNotifications;
         _googlePlaySettings = googlePlaySettings.Value;
+        _testingSettings = testingSettings.Value;
     }
 
     public async Task<SubscriptionPlan> GetActivePlanAsync(int userId, CancellationToken cancellationToken = default)
     {
+        // Closed testing: Google Play-in test alışlarını sürətləndirilmiş dövrədə avtomatik
+        // ləğv etməsi testçiləri narahat etdiyi üçün, bu bayraq aktivdirsə real abunəlik
+        // vəziyyətindən asılı olmayaraq hamıya Pro Plus hüquqları verilir.
+        if (_testingSettings.ForceProPlusForAllUsers)
+            return SubscriptionPlan.ProPlus;
+
         var subscription = await _repository.GetActiveAsync(userId, cancellationToken);
 
         if (subscription is null)
@@ -54,6 +63,9 @@ public sealed class SubscriptionService : ISubscriptionService
 
     public async Task<SubscriptionResponse> GetMySubscriptionAsync(int userId, CancellationToken cancellationToken = default)
     {
+        if (_testingSettings.ForceProPlusForAllUsers)
+            return TestingProPlusResponse();
+
         var subscription = await _repository.GetActiveAsync(userId, cancellationToken);
 
         if (subscription is null || IsExpired(subscription))
@@ -220,6 +232,10 @@ public sealed class SubscriptionService : ISubscriptionService
 
     private static SubscriptionResponse FreeResponse() =>
         new(SubscriptionPlan.Free, true, null, null, false, null);
+
+    /// <summary>Closed testing zamanı UI-da göstərilən "sahə" statusu — real satınalma deyil.</summary>
+    private static SubscriptionResponse TestingProPlusResponse() =>
+        new(SubscriptionPlan.ProPlus, true, null, null, false, null);
 
     private static SubscriptionResponse Map(UserSubscription s) =>
         new(s.Plan, s.IsActive, s.StartDate, s.EndDate, s.AutoRenew, s.Platform);

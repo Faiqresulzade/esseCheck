@@ -93,6 +93,11 @@ builder.Services.AddOptions<OpenRouterSettings>()
 builder.Services.AddOptions<GooglePlaySettings>()
     .BindConfiguration(GooglePlaySettings.SectionName);
 
+// Yalnız closed testing üçün müvəqqəti bayraq (bax TestingSettings.cs) — appsettings.json-da
+// defolt false-dur, yalnız Render env var (Testing__ForceProPlusForAllUsers=true) ilə açılır.
+builder.Services.AddOptions<TestingSettings>()
+    .BindConfiguration(TestingSettings.SectionName);
+
 // --- Layers ---
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();
