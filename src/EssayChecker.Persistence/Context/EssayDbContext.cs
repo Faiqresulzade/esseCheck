@@ -1,4 +1,5 @@
 ﻿using EssayChecker.Domain.Entities.Essays;
+using EssayChecker.Domain.Entities.Logs;
 using EssayChecker.Domain.Entities.Subscriptions;
 using EssayChecker.Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
@@ -25,6 +26,8 @@ public class EssayDbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<ProcessedGoogleNotification> ProcessedGoogleNotifications => Set<ProcessedGoogleNotification>();
+
+    public DbSet<RequestLog> RequestLogs => Set<RequestLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -174,6 +174,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Qəsdən UseExceptionHandler-dən ƏVVƏL — beləliklə `finally` işlədikdə istisna işləyicisinin
+// artıq həll etdiyi son status kodu görünür (bax middleware-in özündəki qeyd).
+app.UseMiddleware<EssayChecker.Api.Logging.RequestResponseLoggingMiddleware>();
+
 app.UseExceptionHandler();
 
 // Qəsdən bütün mühitlərdə (production daxil) açıqdır.

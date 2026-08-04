@@ -3,6 +3,7 @@ using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure.Ai;
 using EssayChecker.Infrastructure.GooglePlay;
 using EssayChecker.Infrastructure.Services.Essays;
+using EssayChecker.Infrastructure.Services.Logs;
 using EssayChecker.Infrastructure.Services.Subscriptions;
 using EssayChecker.Infrastructure.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
@@ -55,6 +56,7 @@ public static class DependencyInjection
         // Fon xidmətləri
         services.AddHostedService<RefreshTokenCleanupService>();
         services.AddHostedService<AccountPurgeService>();
+        services.AddHostedService<RequestLogCleanupService>();
 
         return services;
     }
