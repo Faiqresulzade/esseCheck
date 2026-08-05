@@ -24,4 +24,12 @@ public sealed class EvaluateEssayRequest
     [Required(ErrorMessage = "Sinif seçilməlidir.")]
     [EnumDataType(typeof(GradeLevel), ErrorMessage = "Sinif dəyəri etibarsızdır.")]
     public GradeLevel Grade { get; set; }
+
+    /// <summary>
+    /// Opsional tapşırıq mövzusu (məs. "Should students wear school uniforms?"). Verilibsə,
+    /// AI content balını essenin özündən çıxardığı mövzu əvəzinə birbaşa bu mövzuya görə
+    /// qiymətləndirir. Boş qalarsa AI mövzunu essenin özündən çıxarır.
+    /// </summary>
+    [MaxLength(300)]
+    public string? Topic { get; set; }
 }

@@ -6,5 +6,5 @@ namespace EssayChecker.Application.DTOs.Interfaces;
 /// <summary>AI ilə esse qiymətləndirmə (OpenRouter).</summary>
 public interface IEssayEvaluator
 {
-    Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, CancellationToken cancellationToken = default);
+    Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, string? topic, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,7 @@
 using EssayChecker.Application.DTOs.Essays;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Domain.Entities.Essays;
+using EssayChecker.Infrastructure.Ai;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
 
@@ -25,7 +26,7 @@ public sealed class EssayService : IEssayService
         EvaluateEssayRequest request,
         CancellationToken cancellationToken = default)
     {
-        var data = await _evaluator.EvaluateAsync(request.Text, request.Grade, cancellationToken);
+        var data = await _evaluator.EvaluateAsync(request.Text, request.Grade, request.Topic, cancellationToken);
 
         if (!data.IsEssay)
             return new EvaluateEssayResult(false, data.InvalidReason, null);
@@ -36,7 +37,7 @@ public sealed class EssayService : IEssayService
             Title = ResolveTitle(request.Title, request.Text),
             OriginalText = request.Text,
             CorrectedEssay = data.CorrectedEssay,
-            WordCount = CountWords(request.Text),
+            WordCount = EssayPrompts.CountWords(request.Text),
             TotalScore = data.Scores.Total,
             AccuracyPercent = (int)Math.Round(data.Scores.Total / 5.0 * 100),
             InputSource = request.Source,
@@ -144,9 +145,6 @@ public sealed class EssayService : IEssayService
             e.Feedback.Strengths,
             e.Feedback.Weaknesses,
             e.Feedback.Recommendations));
-
-    private static int CountWords(string text) =>
-        text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
 
     private static string ResolveTitle(string? title, string text)
     {

@@ -30,11 +30,11 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         _logger = logger;
     }
 
-    public async Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, CancellationToken cancellationToken = default)
+    public async Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, string? topic, CancellationToken cancellationToken = default)
     {
         var messages = new[]
         {
-            new ChatMessage { Role = "system", Content = EssayPrompts.GetSystem(grade) },
+            new ChatMessage { Role = "system", Content = EssayPrompts.GetSystem(grade, essayText, topic) },
             new ChatMessage { Role = "user", Content = essayText }
         };
 
