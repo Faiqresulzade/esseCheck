@@ -16,7 +16,7 @@ public sealed class EssayEvaluationData
 
     public IReadOnlyList<EssayMistakeDto> Mistakes { get; init; } = Array.Empty<EssayMistakeDto>();
 
-    public EssayScoresDto Scores { get; init; } = new(0, 0, 0, 0, 0);
+    public EssayScoresDto Scores { get; init; } = new(0, "", 0, "", 0, "", 0, "", 0);
 
     public TeacherFeedbackDto Feedback { get; init; } =
         new(Array.Empty<string>(), Array.Empty<string>(), Array.Empty<string>());

@@ -38,7 +38,13 @@ public class EssayConfiguration : IEntityTypeConfiguration<Essay>
 
         // Statistika və ballar — sətir daxilində sütunlar (owned).
         builder.OwnsOne(e => e.Statistics);
-        builder.OwnsOne(e => e.Scores);
+        builder.OwnsOne(e => e.Scores, s =>
+        {
+            s.Property(x => x.StructureComment).HasMaxLength(500);
+            s.Property(x => x.ContentComment).HasMaxLength(500);
+            s.Property(x => x.GrammarComment).HasMaxLength(500);
+            s.Property(x => x.VocabularyComment).HasMaxLength(500);
+        });
 
         // Müəllim rəyi və səhvlər — JSON sütunlar (bütöv oxunub-yazılır).
         builder.OwnsOne(e => e.Feedback, f => f.ToJson());

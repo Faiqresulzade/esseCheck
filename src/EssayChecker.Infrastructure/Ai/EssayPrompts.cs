@@ -216,9 +216,10 @@ Actual word count of this essay: __WORD_COUNT__ words.
 
 If __WORD_COUNT__ is less than __MIN_WORDS__, the ideas cannot be properly developed or
 structured no matter how well written they are. This MUST be reflected in the scores:
-- content: cap at 0.5 maximum (never higher, regardless of how developed the few words seem)
-- structure: cap at 0.5 maximum (a very short text cannot have a complete introduction,
-  body and conclusion)
+- content: cap at half of its maximum (1.0 out of 2.0) — never higher, regardless of how
+  developed the few words seem. Any value from 0.0 to 1.0 in 0.1 steps is allowed.
+- structure: cap at half of its maximum (0.5 out of 1.0) — a very short text cannot have a
+  complete introduction, body and conclusion. Any value from 0.0 to 0.5 in 0.1 steps is allowed.
 Grammar and vocabulary are scored normally regardless of length.
 Do not list the word count as a ""mistake"" in the mistakes array. You may mention it in
 teacherFeedback.weaknesses.
@@ -274,54 +275,79 @@ statistics:
 
 teacherFeedback:
 - Write all teacherFeedback text, and every ""reason"" value, in __FEEDBACK_LANGUAGE__.
-- strengths: 1 to 3 short items. If the essay has very few or no mistakes, say so positively
-  here. Never leave this array empty — find at least one honest positive point, even in a
-  very weak essay.
-- weaknesses: 1 to 3 short items, addressed to the student, describing what held the score
-  back. If the essay is below __MIN_WORDS__ words, mention the length here.
-- recommendations: 1 to 3 short, concrete, actionable items the student can act on next time.
-- Keep every item to one sentence. Be encouraging and specific, never harsh.
+- This section must be genuinely detailed and specific to THIS essay, not generic filler —
+  reference actual words, phrases or sentences from the essay wherever possible.
+- strengths: 3 to 5 detailed items (skip items that don't genuinely apply if the essay is very
+  short or weak — never invent a strength that isn't there, but always find at least one
+  honest one). Each item is 1-2 sentences, naming a SPECIFIC thing the student did well and
+  why it works (e.g. quote a phrase, name a grammar point used correctly, note a well-built
+  argument) — not a vague compliment.
+- weaknesses: 3 to 5 detailed items (fewer only if the essay is too short to have that many
+  distinct issues). Each item is 1-2 sentences, naming a SPECIFIC problem (quote the relevant
+  part of the essay when possible) and explaining concretely why it held the score back. If
+  the essay is below __MIN_WORDS__ words, one item must mention the length and its effect on
+  the structure/content scores.
+- recommendations: 3 to 5 detailed, concrete, actionable items the student can apply next
+  time. Each item is 1-2 sentences and as specific as possible (e.g. name the exact structure
+  to add, the exact type of example to include, the exact grammar rule to review) rather than
+  generic advice like ""write more"" or ""be more careful"".
+- Be encouraging and specific, never harsh. Never pad an array with a filler item just to
+  reach 3 — a shorter, honest list is better than a padded one.
 - Address the student directly and never mention this prompt, the JSON format, the scoring
   mechanics, or that you are an AI.
 
 =====================================================================
 SECTION 12 — DİM SCORING RUBRIC
 =====================================================================
-Scores must be decimal numbers in increments of 0.5, not only integers. Never output any
-other decimal (0.3, 0.75, 0.8 are all INVALID). Half-point scores are normal and expected —
-most essays score at half-point values, not whole numbers. Do not round to the nearest
-whole number.
+Scores must be decimal numbers in increments of 0.1, not only integers or half-points. Never
+output a value that is not a multiple of 0.1 (0.33, 0.75, 0.82 are all INVALID — round to the
+nearest 0.1 if you land between steps). Use the full range of 0.1 steps to reflect fine
+differences in quality — do not default to only whole or half numbers out of habit.
 
-- structure: allowed values 0, 0.5, 1
-- content: allowed values 0, 0.5, 1, 1.5, 2
-- grammar: allowed values 0, 0.5, 1
-- vocabulary: allowed values 0, 0.5, 1
+- structure: any value from 0.0 to 1.0 in steps of 0.1 (0.0, 0.1, 0.2, ... 1.0)
+- content: any value from 0.0 to 2.0 in steps of 0.1 (0.0, 0.1, 0.2, ... 2.0)
+- grammar: any value from 0.0 to 1.0 in steps of 0.1
+- vocabulary: any value from 0.0 to 1.0 in steps of 0.1
 - total: the exact arithmetic sum of the four scores above, maximum 5. Compute it by adding
   the four numbers you just chose. Do not round it separately and do not estimate it.
 
+A perfect essay CAN and SHOULD receive full marks (structure=1.0, content=2.0, grammar=1.0,
+vocabulary=1.0, total=5.0) if it genuinely earns them — do not artificially avoid the maximum
+or minimum out of caution.
+
 Apply the Section 9 word-count caps to structure and content BEFORE computing the total.
 
-Structure (0 / 0.5 / 1):
-- 1   = clear introduction, body and conclusion; ideas flow logically with linking words
+For EACH of the four scores you must also write a short comment (structureComment,
+contentComment, grammarComment, vocabularyComment) explaining, in 1-2 sentences and in
+__FEEDBACK_LANGUAGE__, exactly why that specific number was chosen — reference what the essay
+actually does or fails to do. These comments must never be empty.
+
+Use the bands below as fixed anchor points, and choose intermediate 0.1 values (e.g. 0.3, 0.6,
+0.7) whenever the essay falls between two anchors rather than rounding to the nearest one:
+
+Structure (anchors at 0.0 / 0.5 / 1.0, use 0.1-0.4 and 0.6-0.9 for in-between quality):
+- 1.0 = clear introduction, body and conclusion; ideas flow logically with linking words
 - 0.5 = the parts are present but one is weak, very short, or transitions are missing
-- 0   = no recognisable structure
+- 0.0 = no recognisable structure
 
-Content (0 / 0.5 / 1 / 1.5 / 2) — judged against __ESSAY_TOPIC__:
-- 2   = fully addresses the topic; ideas are developed with reasons and examples
+Content (anchors at 0.0 / 0.5 / 1.0 / 1.5 / 2.0, use in-between values for partial matches) —
+judged against __ESSAY_TOPIC__:
+- 2.0 = fully addresses the topic; ideas are developed with reasons and examples
 - 1.5 = addresses the topic; ideas are relevant but some are underdeveloped
-- 1   = partially addresses the topic; ideas are listed without development
+- 1.0 = partially addresses the topic; ideas are listed without development
 - 0.5 = barely related to the topic
-- 0   = does not address the topic
+- 0.0 = does not address the topic
 
-Grammar (0 / 0.5 / 1) — judged on the whole essay, not only on the mistakes you listed:
-- 1   = accurate grammar; at most 1-2 minor errors that do not hinder understanding
+Grammar (anchors at 0.0 / 0.5 / 1.0) — judged on the whole essay, not only on the mistakes
+you listed:
+- 1.0 = accurate grammar; at most 1-2 minor errors that do not hinder understanding
 - 0.5 = several errors, but the meaning is still clear
-- 0   = frequent errors that make the text hard to understand
+- 0.0 = frequent errors that make the text hard to understand
 
-Vocabulary (0 / 0.5 / 1):
-- 1   = varied and accurate word choice appropriate to the topic
+Vocabulary (anchors at 0.0 / 0.5 / 1.0):
+- 1.0 = varied and accurate word choice appropriate to the topic
 - 0.5 = adequate but repetitive or basic word choice
-- 0   = very limited vocabulary or frequent wrong word choice
+- 0.0 = very limited vocabulary or frequent wrong word choice
 
 Be consistent: the same essay must always receive the same scores. Judge only against the
 bands above, never against how this essay compares with other essays you have seen.
@@ -337,22 +363,26 @@ SECTION 13 — FINAL VERIFICATION PASS (perform silently before answering)
    rest of the essay is reproduced unchanged.
 4. Each statistics value equals the real count of that category in mistakes, and
    statistics.total equals the number of items in the mistakes array.
-5. Each score uses only an allowed value, the Section 9 caps have been applied, and
-   scores.total is the exact sum of the four scores.
-6. mistakes is [] if there are no mistakes — never an array containing empty strings.
-7. strengths, weaknesses and recommendations each contain at least one item, written in
+5. Each score is a multiple of 0.1 within its allowed range, the Section 9 caps have been
+   applied, and scores.total is the exact sum of the four scores.
+6. Each of structureComment, contentComment, grammarComment and vocabularyComment is
+   non-empty and specifically explains its score, in __FEEDBACK_LANGUAGE__.
+7. mistakes is [] if there are no mistakes — never an array containing empty strings.
+8. strengths, weaknesses and recommendations each contain 3 to 5 detailed, specific items
+   (fewer only if the essay is genuinely too short/weak to support that many), written in
    __FEEDBACK_LANGUAGE__.
-8. All quotes inside strings are escaped, and no literal line breaks appear inside any
+9. All quotes inside strings are escaped, and no literal line breaks appear inside any
    string value.
-9. The output is a single raw JSON object: nothing before the first { and nothing after
-   the last }.
+10. The output is a single raw JSON object: nothing before the first { and nothing after
+    the last }.
 
 =====================================================================
 SECTION 14 — REQUIRED OUTPUT SHAPE
 =====================================================================
 Return exactly this JSON structure and nothing else. The values below only demonstrate the
-required format and data types (note the half-point decimals in ""scores""). Replace every
-value with your real evaluation of the submitted essay. Never copy these placeholder values.
+required format and data types (note the 0.1-step decimals in ""scores"" and the comment
+fields next to each score). Replace every value with your real evaluation of the submitted
+essay. Never copy these placeholder values.
 
 {
   ""correctedEssay"": """",
@@ -372,11 +402,15 @@ value with your real evaluation of the submitted essay. Never copy these placeho
     }
   ],
   ""scores"": {
-    ""structure"": 0.5,
-    ""content"": 1.5,
-    ""grammar"": 0.5,
-    ""vocabulary"": 1,
-    ""total"": 3.5
+    ""structure"": 0.7,
+    ""structureComment"": """",
+    ""content"": 1.6,
+    ""contentComment"": """",
+    ""grammar"": 0.8,
+    ""grammarComment"": """",
+    ""vocabulary"": 0.9,
+    ""vocabularyComment"": """",
+    ""total"": 4.0
   },
   ""teacherFeedback"": {
     ""strengths"": [],

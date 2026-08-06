@@ -54,9 +54,13 @@ public sealed class EssayService : IEssayService
             Scores = new EssayScores
             {
                 Structure = data.Scores.Structure,
+                StructureComment = data.Scores.StructureComment,
                 Content = data.Scores.Content,
+                ContentComment = data.Scores.ContentComment,
                 Grammar = data.Scores.Grammar,
+                GrammarComment = data.Scores.GrammarComment,
                 Vocabulary = data.Scores.Vocabulary,
+                VocabularyComment = data.Scores.VocabularyComment,
                 Total = data.Scores.Total
             },
             Feedback = new TeacherFeedback
@@ -137,9 +141,13 @@ public sealed class EssayService : IEssayService
             .ToList(),
         new EssayScoresDto(
             e.Scores.Structure,
+            e.Scores.StructureComment,
             e.Scores.Content,
+            e.Scores.ContentComment,
             e.Scores.Grammar,
+            e.Scores.GrammarComment,
             e.Scores.Vocabulary,
+            e.Scores.VocabularyComment,
             e.Scores.Total),
         new TeacherFeedbackDto(
             e.Feedback.Strengths,

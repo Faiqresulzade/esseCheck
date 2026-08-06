@@ -149,8 +149,13 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 
     private static EssayScoresDto MapScores(AiScores? s) =>
         s is null
-            ? new EssayScoresDto(0, 0, 0, 0, 0)
-            : new EssayScoresDto(s.Structure, s.Content, s.Grammar, s.Vocabulary, s.Total);
+            ? new EssayScoresDto(0, "", 0, "", 0, "", 0, "", 0)
+            : new EssayScoresDto(
+                s.Structure, s.StructureComment ?? "",
+                s.Content, s.ContentComment ?? "",
+                s.Grammar, s.GrammarComment ?? "",
+                s.Vocabulary, s.VocabularyComment ?? "",
+                s.Total);
 
     private static IReadOnlyList<EssayMistakeDto> MapMistakes(List<AiMistake>? mistakes)
     {
@@ -211,9 +216,13 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
     private sealed class AiScores
     {
         public double Structure { get; set; }
+        public string? StructureComment { get; set; }
         public double Content { get; set; }
+        public string? ContentComment { get; set; }
         public double Grammar { get; set; }
+        public string? GrammarComment { get; set; }
         public double Vocabulary { get; set; }
+        public string? VocabularyComment { get; set; }
         public double Total { get; set; }
     }
 
