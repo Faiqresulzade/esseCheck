@@ -32,9 +32,28 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 
     public async Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, string? topic, CancellationToken cancellationToken = default)
     {
+        // Sistem promptu iki hissəyə bölünür ki, Anthropic prompt caching işləsin: sabit qayda
+        // dəsti (StaticRules) cache_control ilə işarələnir və HƏR sorğuda (sinif/mövzu/esse
+        // fərqli olsa belə) bayt-bayt eynidir, ona görə Anthropic onu keşləyir. Sorğuya-görə-
+        // dəyişən dəyərlər (sinif, mövzu, söz sayı) ayrı, keşlənməmiş bir bloka qoyulur.
         var messages = new[]
         {
-            new ChatMessage { Role = "system", Content = EssayPrompts.GetSystem(grade, essayText, topic) },
+            new ChatMessage
+            {
+                Role = "system",
+                Content = new[]
+                {
+                    new TextContentPart
+                    {
+                        Text = EssayPrompts.StaticRules,
+                        CacheControl = new CacheControl()
+                    },
+                    new TextContentPart
+                    {
+                        Text = EssayPrompts.GetDynamicInputVariables(grade, essayText, topic)
+                    }
+                }
+            },
             new ChatMessage { Role = "user", Content = essayText }
         };
 

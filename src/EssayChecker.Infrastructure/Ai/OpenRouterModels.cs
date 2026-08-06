@@ -37,9 +37,36 @@ internal sealed class ChatMessage
     [JsonPropertyName("role")]
     public string Role { get; set; } = null!;
 
-    /// <summary>Mətn üçün string, vision (OCR) üçün content-part massivi.</summary>
+    /// <summary>
+    /// Mətn üçün string, vision (OCR) üçün content-part massivi, keşlənən sistem promptu üçün
+    /// <see cref="TextContentPart"/> massivi (cache_control ilə).
+    /// </summary>
     [JsonPropertyName("content")]
     public object Content { get; set; } = null!;
+}
+
+/// <summary>
+/// Anthropic prompt caching üçün mətn bloku. cache_control doldurulmuş blokdan əvvəlki (bu blok
+/// daxil) bütün mətn Anthropic tərəfindən keşlənir — sonrakı sorğularda eyni prefiks üçün
+/// prompt token qiyməti ~90% ucuzlaşır. OpenRouter bu sahəni Anthropic modellərinə şəffaf ötürür.
+/// </summary>
+internal sealed class TextContentPart
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "text";
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = null!;
+
+    [JsonPropertyName("cache_control")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public CacheControl? CacheControl { get; set; }
+}
+
+internal sealed class CacheControl
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "ephemeral";
 }
 
 internal sealed class ChatCompletionResponse
