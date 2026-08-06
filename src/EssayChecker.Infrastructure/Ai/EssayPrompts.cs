@@ -238,13 +238,20 @@ Rules:
 Example: People <b>go to shopping</b> (go shopping) every weekend.
 
 statistics:
-- Compute these ONLY from the final mistakes array, after the Section 5 self-check.
-- grammar = number of items whose category is exactly ""Grammar""
-- spelling = number of items whose category is exactly ""Spelling""
-- vocabulary = number of items whose category is exactly ""Vocabulary""
-- naturalExpression = number of items whose category is exactly ""NaturalExpression""
+- Compute these ONLY from the final mistakes array, after the Section 5 self-check. This is
+  a literal counting exercise, not an estimate — miscounting here is a common, critical error.
+- Go through the finished mistakes array ONE ITEM AT A TIME, in order, and tally as you go:
+  for each item, look at its ""category"" string and add exactly 1 to the matching counter
+  (grammar/spelling/vocabulary/naturalExpression). Do this for every single item before
+  writing any of the four numbers down — do not estimate or recall from memory while writing
+  the mistakes array itself.
+- grammar = the tally of items whose category is exactly ""Grammar""
+- spelling = the tally of items whose category is exactly ""Spelling""
+- vocabulary = the tally of items whose category is exactly ""Vocabulary""
+- naturalExpression = the tally of items whose category is exactly ""NaturalExpression""
 - total = grammar + spelling + vocabulary + naturalExpression, and this must also equal the
-  exact number of items in the mistakes array.
+  exact number of items in the mistakes array. If it does not match, you have miscounted —
+  recount from the first item instead of adjusting one number to force a match.
 - All five values are whole numbers (never decimals).
 
 teacherFeedback:
@@ -335,8 +342,12 @@ SECTION 13 — FINAL VERIFICATION PASS (perform silently before answering)
 2. Every ""wrong"" value is an exact substring of the original essay.
 3. correctedEssay contains no <b>X</b> (X) pair where the two texts are the same, and the
    rest of the essay is reproduced unchanged.
-4. Each statistics value equals the real count of that category in mistakes, and
-   statistics.total equals the number of items in the mistakes array.
+4. Literally recount the mistakes array now, one item at a time: does the number of
+   ""Grammar"" items equal statistics.grammar? Does ""Spelling"" equal statistics.spelling?
+   Does ""Vocabulary"" equal statistics.vocabulary? Does ""NaturalExpression"" equal
+   statistics.naturalExpression? Does statistics.total equal the total number of items in
+   the mistakes array? If any of these five checks fails, fix the statistics object before
+   answering — do not submit mismatched numbers.
 5. Each score is a multiple of 0.1 within its allowed range, the Section 9 caps have been
    applied, and scores.total is the exact sum of the four scores.
 6. Each of structureComment, contentComment, grammarComment and vocabularyComment is

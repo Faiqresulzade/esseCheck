@@ -1,3 +1,4 @@
+using System.Net.Http;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure.Ai;
@@ -41,6 +42,15 @@ public static class DependencyInjection
         services.AddHttpClient<OpenRouterClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(60);
+        })
+        // Defolt SocketsHttpHandler hər bağlantı üçün Windows-un sistem proksi aşkarlanmasını
+        // (WPAD/PAC axtarışı) işə salır — bu, bəzi Windows dev mühitlərində hər sorğuya
+        // onlarla saniyə əlavə edə bilir (real şəbəkə gecikməsi deyil, proksi axtarışının
+        // özüdür). Bizə heç bir korporativ proksi lazım deyil, ona görə tam söndürülür.
+        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+        {
+            UseProxy = false,
+            Proxy = null
         });
         services.AddScoped<IEssayEvaluator, OpenRouterEssayEvaluator>();
         services.AddScoped<IOcrService, OpenRouterOcrService>();

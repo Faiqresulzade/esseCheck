@@ -130,13 +130,19 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             };
         }
 
+        var mistakes = MapMistakes(dto.Mistakes);
+
         return new EssayEvaluationData
         {
             IsEssay = true,
             CorrectedEssay = dto.CorrectedEssay ?? string.Empty,
-            Statistics = MapStatistics(dto.Statistics),
+            // AI-ın öz-özünə saydığı "statistics" tez-tez mistakes massivinin faktiki tərkibi
+            // ilə uyğun gəlmir (bir neçə model üzərində test edilib, hamısında rast gəlindi) —
+            // ona görə etibar etmək əvəzinə, statistikanı birbaşa artıq map olunmuş mistakes
+            // siyahısından özümüz sayırıq. Bu, 100% uyğunluğu zəmanət altına alır.
+            Statistics = ComputeStatistics(mistakes),
             Scores = MapScores(dto.Scores),
-            Mistakes = MapMistakes(dto.Mistakes),
+            Mistakes = mistakes,
             Feedback = MapFeedback(dto.TeacherFeedback)
         };
     }
@@ -161,10 +167,26 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         return start >= 0 && end > start ? text[start..(end + 1)] : text;
     }
 
-    private static EssayStatisticsDto MapStatistics(AiStatistics? s) =>
-        s is null
-            ? new EssayStatisticsDto(0, 0, 0, 0, 0)
-            : new EssayStatisticsDto(s.Grammar, s.Spelling, s.Vocabulary, s.NaturalExpression, s.Total);
+    private static EssayStatisticsDto ComputeStatistics(IReadOnlyList<EssayMistakeDto> mistakes)
+    {
+        var grammar = 0;
+        var spelling = 0;
+        var vocabulary = 0;
+        var naturalExpression = 0;
+
+        foreach (var m in mistakes)
+        {
+            switch (m.Category)
+            {
+                case MistakeCategory.Grammar: grammar++; break;
+                case MistakeCategory.Spelling: spelling++; break;
+                case MistakeCategory.Vocabulary: vocabulary++; break;
+                case MistakeCategory.NaturalExpression: naturalExpression++; break;
+            }
+        }
+
+        return new EssayStatisticsDto(grammar, spelling, vocabulary, naturalExpression, mistakes.Count);
+    }
 
     private static EssayScoresDto MapScores(AiScores? s) =>
         s is null
