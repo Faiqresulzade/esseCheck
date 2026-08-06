@@ -84,7 +84,7 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
                         model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
                 }
 
-                return MapToResult(dto);
+                return MapToResult(dto, grade, essayText);
             }
             catch (JsonException ex)
             {
@@ -119,7 +119,10 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         return dto ?? throw new AiServiceException("AI cavabı boş qayıtdı.", isTransient: true);
     }
 
-    private static EssayEvaluationData MapToResult(AiEssayDto dto)
+    /// <summary>11-ci sinifdə bu həddən az söz varsa, content balı istisnasız 0 olmalıdır (AI-a etibar edilmir).</summary>
+    private const int Grade11ContentZeroFloorWords = 70;
+
+    private static EssayEvaluationData MapToResult(AiEssayDto dto, GradeLevel grade, string essayText)
     {
         if (string.Equals(dto.Status, "invalid", StringComparison.OrdinalIgnoreCase))
         {
@@ -131,6 +134,20 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         }
 
         var mistakes = MapMistakes(dto.Mistakes);
+        var scores = MapScores(dto.Scores);
+
+        // AI-ın verdiyi bala etibar etmirik — 11-ci sinifdə 70 sözdən az essedə content balı
+        // kodla məcburi 0-a endirilir, AI nə qaytarsa qaytarsın (istənilən halda).
+        if (grade == GradeLevel.Grade11 && EssayPrompts.CountWords(essayText) < Grade11ContentZeroFloorWords)
+        {
+            var total = scores.Structure + 0 + scores.Grammar + scores.Vocabulary;
+            scores = scores with
+            {
+                Content = 0,
+                ContentComment = "70 sözdən az yazılmış esselərdə (11-ci sinif) məzmun balı avtomatik 0 təyin olunur.",
+                Total = total
+            };
+        }
 
         return new EssayEvaluationData
         {
@@ -141,7 +158,7 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             // ona görə etibar etmək əvəzinə, statistikanı birbaşa artıq map olunmuş mistakes
             // siyahısından özümüz sayırıq. Bu, 100% uyğunluğu zəmanət altına alır.
             Statistics = ComputeStatistics(mistakes),
-            Scores = MapScores(dto.Scores),
+            Scores = scores,
             Mistakes = mistakes,
             Feedback = MapFeedback(dto.TeacherFeedback)
         };
