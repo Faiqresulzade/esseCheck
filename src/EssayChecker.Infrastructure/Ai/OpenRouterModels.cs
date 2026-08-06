@@ -67,6 +67,16 @@ internal sealed class CacheControl
 {
     [JsonPropertyName("type")]
     public string Type { get; set; } = "ephemeral";
+
+    /// <summary>
+    /// "5m" (defolt, boş qalarsa) və ya "1h". 1h yazma qiyməti 5m-dən bahadır (~1.6x), amma
+    /// esse sorğuları arasında boşluqlar 5 dəqiqədən uzun ola bildiyi üçün (aktiv istifadəçi
+    /// azdırsa) 1h ümumi orta xərci real şəkildə aşağı salır — empirik test edilib: 6.5 dəqiqə
+    /// sonra "1h" ilə yazılmış keş hələ də isti idi (cached_tokens dolu), "5m" ilə olsaydı
+    /// artıq bitmiş olardı.
+    /// </summary>
+    [JsonPropertyName("ttl")]
+    public string Ttl { get; set; } = "1h";
 }
 
 internal sealed class ChatCompletionResponse
