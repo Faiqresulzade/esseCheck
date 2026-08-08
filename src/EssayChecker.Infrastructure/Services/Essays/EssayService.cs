@@ -1,6 +1,7 @@
 using EssayChecker.Application.DTOs.Essays;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Domain.Entities.Essays;
+using EssayChecker.Domain.Enums;
 using EssayChecker.Infrastructure.Ai;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
@@ -26,22 +27,55 @@ public sealed class EssayService : IEssayService
         EvaluateEssayRequest request,
         CancellationToken cancellationToken = default)
     {
-        var data = await _evaluator.EvaluateAsync(request.Text, request.Grade, request.Topic, cancellationToken);
+        var data = await _evaluator.EvaluateAsync(
+            request.Text, request.Grade, request.Topic, promptImages: null, cancellationToken);
 
+        return await PersistAndMapAsync(
+            userId, data, request.Text, request.Title, request.Grade, request.Source, cancellationToken);
+    }
+
+    /// <summary>
+    /// 9-cu sinif — DİM formatı: tələbə 3 promt-şəklini (yazı tapşırığının əsaslandığı şəkillər)
+    /// göndərir, AI essenin content balını bu şəkillərdə göstərilənlərə görə qiymətləndirir.
+    /// Mövzu (topic) sahəsi mənasızdır, ona görə istifadə olunmur.
+    /// </summary>
+    public async Task<EvaluateEssayResult> EvaluateGrade9WithImagesAsync(
+        int userId,
+        string text,
+        string? title,
+        IReadOnlyList<PromptImage> promptImages,
+        CancellationToken cancellationToken = default)
+    {
+        var data = await _evaluator.EvaluateAsync(
+            text, GradeLevel.Grade9, topic: null, promptImages, cancellationToken);
+
+        return await PersistAndMapAsync(
+            userId, data, text, title, GradeLevel.Grade9, EssayInputSource.Text, cancellationToken);
+    }
+
+    private async Task<EvaluateEssayResult> PersistAndMapAsync(
+        int userId,
+        EssayEvaluationData data,
+        string originalText,
+        string? title,
+        GradeLevel grade,
+        EssayInputSource source,
+        CancellationToken cancellationToken)
+    {
         if (!data.IsEssay)
             return new EvaluateEssayResult(false, data.InvalidReason, null);
 
         var essay = new Essay
         {
             UserId = userId,
-            Title = ResolveTitle(request.Title, request.Text),
-            OriginalText = request.Text,
+            Title = ResolveTitle(title, originalText),
+            OriginalText = originalText,
             CorrectedEssay = data.CorrectedEssay,
-            WordCount = EssayPrompts.CountWords(request.Text),
+            WordCount = EssayPrompts.CountWords(originalText),
             TotalScore = data.Scores.Total,
             AccuracyPercent = (int)Math.Round(data.Scores.Total / 5.0 * 100),
-            InputSource = request.Source,
-            Grade = request.Grade,
+            InputSource = source,
+            Grade = grade,
             CreatedAt = DateTime.UtcNow,
             Statistics = new EssayStatistics
             {

@@ -30,8 +30,15 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         _logger = logger;
     }
 
-    public async Task<EssayEvaluationData> EvaluateAsync(string essayText, GradeLevel grade, string? topic, CancellationToken cancellationToken = default)
+    public async Task<EssayEvaluationData> EvaluateAsync(
+        string essayText,
+        GradeLevel grade,
+        string? topic,
+        IReadOnlyList<PromptImage>? promptImages = null,
+        CancellationToken cancellationToken = default)
     {
+        var hasImages = promptImages is { Count: > 0 };
+
         // Sistem promptu iki hissəyə bölünür ki, Anthropic prompt caching işləsin: sabit qayda
         // dəsti (StaticRules) cache_control ilə işarələnir və HƏR sorğuda (sinif/mövzu/esse
         // fərqli olsa belə) bayt-bayt eynidir, ona görə Anthropic onu keşləyir. Sorğuya-görə-
@@ -50,11 +57,11 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
                     },
                     new TextContentPart
                     {
-                        Text = EssayPrompts.GetDynamicInputVariables(grade, essayText, topic)
+                        Text = EssayPrompts.GetDynamicInputVariables(grade, essayText, topic, hasImages)
                     }
                 }
             },
-            new ChatMessage { Role = "user", Content = essayText }
+            new ChatMessage { Role = "user", Content = BuildUserContent(essayText, promptImages) }
         };
 
         // Sırayla cəhd ediləcək modellər: əvvəlcə pulsuz, o uğursuz olarsa (və konfiqurasiya
@@ -110,6 +117,26 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             $"AI qiymətləndirməsi bütün modellərdən ({string.Join(", ", modelsToTry)}) sonra uğursuz oldu: {lastError?.Message}",
             isTransient: true,
             innerException: lastError);
+    }
+
+    /// <summary>
+    /// Şəkil yoxdursa (11-ci sinif) sadə mətn stringi, varsa (9-cu sinif) mətn + şəkillərdən
+    /// ibarət multimodal content massivi qaytarır — vision dəstəkli model (hazırda gpt-4o-mini)
+    /// hər ikisini eyni sorğuda görür.
+    /// </summary>
+    private static object BuildUserContent(string essayText, IReadOnlyList<PromptImage>? promptImages)
+    {
+        if (promptImages is not { Count: > 0 })
+            return essayText;
+
+        var parts = new List<TextOrImageContentPart> { new() { Type = "text", Text = essayText } };
+        parts.AddRange(promptImages.Select(img => new TextOrImageContentPart
+        {
+            Type = "image_url",
+            ImageUrl = new ImageUrlPart { Url = $"data:{img.ContentType};base64,{Convert.ToBase64String(img.Data)}" }
+        }));
+
+        return parts;
     }
 
     private AiEssayDto ParseDto(string raw)

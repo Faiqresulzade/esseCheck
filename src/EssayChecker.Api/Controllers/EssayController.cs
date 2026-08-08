@@ -23,10 +23,21 @@ public class EssayController : ControllerBase
 
     private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    /// <summary>Mətni AI ilə qiymətləndirir və tarixçəyə yazır (gündəlik limit yoxlanır).</summary>
+    /// <summary>
+    /// Mətni AI ilə qiymətləndirir və tarixçəyə yazır (gündəlik limit yoxlanır). Yalnız 11-ci
+    /// sinif — 9-cu sinif DİM formatına görə tam şəkil-əsaslıdır, bax /evaluate/grade9-images.
+    /// </summary>
     [HttpPost("evaluate")]
     public async Task<IActionResult> Evaluate([FromBody] EvaluateEssayRequest request, CancellationToken cancellationToken)
     {
+        if (request.Grade == EssayChecker.Domain.Enums.GradeLevel.Grade9)
+        {
+            return BadRequest(new
+            {
+                message = "9-cu sinif üçün esse yalnız 3 promt-şəkli ilə göndərilməlidir: /api/Essay/evaluate/grade9-images."
+            });
+        }
+
         var decision = await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
         if (!decision.Allowed)
             return StatusCode(StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
@@ -60,6 +71,51 @@ public class EssayController : ControllerBase
 
         await _usageLimitService.ConsumeOcrAsync(UserId, cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// 9-cu sinif — DİM formatı: tələbəyə verilən 3 promt-şəkli (yazı tapşırığı) + yazdığı esse
+    /// mətni. Yalnız Pro Plus (bax OCR ilə eyni məhdudiyyət — CheckOcrAsync/ConsumeOcrAsync).
+    /// Grade həmişə Grade9-dur, ayrıca sahə göndərilmir.
+    /// </summary>
+    [HttpPost("evaluate/grade9-images")]
+    [RequestSizeLimit(15 * 1024 * 1024)]
+    public async Task<IActionResult> EvaluateGrade9WithImages(
+        [FromForm] string text,
+        [FromForm] string? title,
+        IFormFile promptImage1,
+        IFormFile promptImage2,
+        IFormFile promptImage3,
+        CancellationToken cancellationToken)
+    {
+        var decision = await _usageLimitService.CheckOcrAsync(UserId, cancellationToken);
+        if (!decision.Allowed)
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = decision.Reason });
+
+        if (string.IsNullOrWhiteSpace(text))
+            return BadRequest(new { message = "Esse mətni boş ola bilməz." });
+
+        var files = new[] { promptImage1, promptImage2, promptImage3 };
+        if (files.Any(f => f is null || f.Length == 0))
+            return BadRequest(new { message = "3 promt-şəkli də tələb olunur." });
+
+        if (files.Any(f => string.IsNullOrEmpty(f.ContentType) || !f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)))
+            return BadRequest(new { message = "Yalnız şəkil faylları qəbul olunur." });
+
+        var promptImages = new List<PromptImage>(3);
+        foreach (var file in files)
+        {
+            using var memory = new MemoryStream();
+            await file.CopyToAsync(memory, cancellationToken);
+            promptImages.Add(new PromptImage(memory.ToArray(), file.ContentType));
+        }
+
+        var result = await _essayService.EvaluateGrade9WithImagesAsync(UserId, text, title, promptImages, cancellationToken);
+        if (!result.Success)
+            return UnprocessableEntity(new { message = result.Error ?? "Göndərilən mətn esse deyil." });
+
+        await _usageLimitService.ConsumeOcrAsync(UserId, cancellationToken);
+        return Ok(result.Essay);
     }
 
     /// <summary>Tarixçə siyahısı (səhifələnmiş, axtarış opsional). page ən azı 1, pageSize 1–100 aralığında.</summary>

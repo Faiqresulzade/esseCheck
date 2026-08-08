@@ -79,6 +79,32 @@ internal sealed class CacheControl
     public string Ttl { get; set; } = "1h";
 }
 
+/// <summary>
+/// İstifadəçi mesajında mətn+şəkil qarışığı üçün (9-cu sinif, promt-şəkilləri). OCR-də
+/// artıq eyni məntiq anonim obyektlə edilib — burada typed versiya, çünki bu sinif
+/// (evaluate axını) DTO-ları başqa yerlərdə də sərf olunur və JSON sahə adlarının
+/// dəqiq uyğunluğu vacibdir.
+/// </summary>
+internal sealed class TextOrImageContentPart
+{
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = null!;
+
+    [JsonPropertyName("text")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Text { get; set; }
+
+    [JsonPropertyName("image_url")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ImageUrlPart? ImageUrl { get; set; }
+}
+
+internal sealed class ImageUrlPart
+{
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = null!;
+}
+
 internal sealed class ChatCompletionResponse
 {
     [JsonPropertyName("choices")]

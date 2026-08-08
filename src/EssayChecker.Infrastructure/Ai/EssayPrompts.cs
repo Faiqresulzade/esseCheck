@@ -23,6 +23,12 @@ The grade level, assigned topic, minimum word count and actual word count for th
 particular essay are provided in a separate ""INPUT VARIABLES"" message that follows this one
 — always use those exact values, never guess or recompute them.
 
+Some student messages include 1 to 3 images before the essay text. When present, these are
+the official DİM writing prompt — a picture story the student was asked to write about. Look
+at them carefully: they are the reference for the content score in Section 12, not decoration.
+Do not comment on the images themselves (their quality, style, etc.) — only use them to judge
+whether the essay's content genuinely relates to what they show.
+
 =====================================================================
 SECTION 2 — CRITICAL OUTPUT RULES (violating these causes a system failure)
 =====================================================================
@@ -312,12 +318,14 @@ Structure (anchors at 0.0 / 0.5 / 1.0, use 0.1-0.4 and 0.6-0.9 for in-between qu
 - 0.0 = no recognisable structure
 
 Content (anchors at 0.0 / 0.5 / 1.0 / 1.5 / 2.0, use in-between values for partial matches) —
-judged against the assigned topic given in the INPUT VARIABLES message:
-- 2.0 = fully addresses the topic; ideas are developed with reasons and examples
-- 1.5 = addresses the topic; ideas are relevant but some are underdeveloped
-- 1.0 = partially addresses the topic; ideas are listed without development
-- 0.5 = barely related to the topic
-- 0.0 = does not address the topic
+judged against the assigned topic given in the INPUT VARIABLES message, OR, if 1 to 3 images
+are attached to the student's message, against what those images actually depict (the images
+ARE the writing prompt in that case — the essay must describe/relate to their content):
+- 2.0 = fully addresses the topic/images; ideas are developed with reasons and examples
+- 1.5 = addresses the topic/images; ideas are relevant but some are underdeveloped
+- 1.0 = partially addresses the topic/images; ideas are listed without development
+- 0.5 = barely related to the topic/images
+- 0.0 = does not address the topic/images at all
 
 Grammar (anchors at 0.0 / 0.5 / 1.0) — judged on the whole essay, not only on the mistakes
 you listed:
@@ -412,7 +420,7 @@ valid JSON object will cause a system error.";
     /// SONRA, keşlənməmiş ayrı bir mesaj kimi göndərilir. Bu bloku dəyişmək keş uyğunluğunu
     /// pozmur, çünki cache_control yalnız StaticRules bloku üzərindədir.
     /// </summary>
-    public static string GetDynamicInputVariables(GradeLevel grade, string essayText, string? topic)
+    public static string GetDynamicInputVariables(GradeLevel grade, string essayText, string? topic, bool hasPromptImages = false)
     {
         var (minWords, gradeLabel) = grade switch
         {
@@ -422,7 +430,16 @@ valid JSON object will cause a system error.";
         };
 
         var wordCount = CountWords(essayText);
-        var topicText = string.IsNullOrWhiteSpace(topic) ? "(not provided)" : topic;
+        var topicText = hasPromptImages
+            ? "(see the images attached to the student's message — they ARE the topic)"
+            : string.IsNullOrWhiteSpace(topic) ? "(not provided)" : topic;
+
+        var topicInstruction = hasPromptImages
+            ? @"Judge the ""content"" score against what the attached images depict, not against a
+topic you infer purely from the essay text alone — the images are the actual assigned prompt."
+            : @"Judge the ""content"" score against the assigned topic above, not against a topic you infer
+from the essay. If the assigned topic is ""(not provided)"", infer the topic from the essay
+itself and never penalise the student for being off-topic in that case.";
 
         return $@"=====================================================================
 INPUT VARIABLES (provided by the system, never by the student)
@@ -433,9 +450,7 @@ INPUT VARIABLES (provided by the system, never by the student)
 - Actual word count of the submitted essay (already computed, TRUST THIS NUMBER): {wordCount}
 
 Do not recount the words yourself. Use {wordCount} exactly as given.
-Judge the ""content"" score against the assigned topic above, not against a topic you infer
-from the essay. If the assigned topic is ""(not provided)"", infer the topic from the essay
-itself and never penalise the student for being off-topic in that case.
+{topicInstruction}
 
 Now evaluate the essay the student sends in the next message, following every rule above.";
     }
