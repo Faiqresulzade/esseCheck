@@ -74,35 +74,41 @@ public class EssayController : ControllerBase
     }
 
     /// <summary>
-    /// 9-cu sinif — DİM formatı: tələbəyə verilən 3 promt-şəkli (yazı tapşırığı) + yazdığı esse
-    /// mətni. Yalnız Pro Plus (bax OCR ilə eyni məhdudiyyət — CheckOcrAsync/ConsumeOcrAsync).
-    /// Grade həmişə Grade9-dur, ayrıca sahə göndərilmir.
+    /// 9-cu sinif — DİM formatı: tələbəyə verilən promt-şəkilləri (yazı tapşırığı, 0-3 ədəd,
+    /// hamısı opsionaldır) + yazdığı esse mətni. Şəkil göndərilməzsə adi mətn limiti (gündəlik),
+    /// şəkil göndərilərsə OCR/vision limiti (yalnız Pro Plus) tətbiq olunur — çünki yalnız o
+    /// halda vision resursu istifadə olunur. Grade həmişə Grade9-dur, ayrıca sahə göndərilmir.
     /// </summary>
     [HttpPost("evaluate/grade9-images")]
     [RequestSizeLimit(15 * 1024 * 1024)]
     public async Task<IActionResult> EvaluateGrade9WithImages(
         [FromForm] string text,
         [FromForm] string? title,
-        IFormFile promptImage1,
-        IFormFile promptImage2,
-        IFormFile promptImage3,
+        IFormFile? promptImage1,
+        IFormFile? promptImage2,
+        IFormFile? promptImage3,
         CancellationToken cancellationToken)
     {
-        var decision = await _usageLimitService.CheckOcrAsync(UserId, cancellationToken);
-        if (!decision.Allowed)
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = decision.Reason });
-
         if (string.IsNullOrWhiteSpace(text))
             return BadRequest(new { message = "Esse mətni boş ola bilməz." });
 
-        var files = new[] { promptImage1, promptImage2, promptImage3 };
-        if (files.Any(f => f is null || f.Length == 0))
-            return BadRequest(new { message = "3 promt-şəkli də tələb olunur." });
+        var files = new[] { promptImage1, promptImage2, promptImage3 }
+            .Where(f => f is not null && f.Length > 0)
+            .Select(f => f!)
+            .ToList();
 
         if (files.Any(f => string.IsNullOrEmpty(f.ContentType) || !f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)))
             return BadRequest(new { message = "Yalnız şəkil faylları qəbul olunur." });
 
-        var promptImages = new List<PromptImage>(3);
+        var hasImages = files.Count > 0;
+
+        var decision = hasImages
+            ? await _usageLimitService.CheckOcrAsync(UserId, cancellationToken)
+            : await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
+        if (!decision.Allowed)
+            return StatusCode(hasImages ? StatusCodes.Status403Forbidden : StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
+
+        var promptImages = new List<PromptImage>(files.Count);
         foreach (var file in files)
         {
             using var memory = new MemoryStream();
@@ -114,7 +120,11 @@ public class EssayController : ControllerBase
         if (!result.Success)
             return UnprocessableEntity(new { message = result.Error ?? "Göndərilən mətn esse deyil." });
 
-        await _usageLimitService.ConsumeOcrAsync(UserId, cancellationToken);
+        if (hasImages)
+            await _usageLimitService.ConsumeOcrAsync(UserId, cancellationToken);
+        else
+            await _usageLimitService.ConsumeTextAsync(UserId, cancellationToken);
+
         return Ok(result.Essay);
     }
 
