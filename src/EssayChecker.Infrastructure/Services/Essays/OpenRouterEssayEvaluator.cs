@@ -232,15 +232,22 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         return new EssayStatisticsDto(grammar, spelling, vocabulary, naturalExpression, mistakes.Count);
     }
 
-    private static EssayScoresDto MapScores(AiScores? s) =>
-        s is null
-            ? new EssayScoresDto(0, "", 0, "", 0, "", 0, "", 0)
-            : new EssayScoresDto(
-                s.Structure, s.StructureComment ?? "",
-                s.Content, s.ContentComment ?? "",
-                s.Grammar, s.GrammarComment ?? "",
-                s.Vocabulary, s.VocabularyComment ?? "",
-                s.Total);
+    private static EssayScoresDto MapScores(AiScores? s)
+    {
+        if (s is null)
+            return new EssayScoresDto(0, "", 0, "", 0, "", 0, "", 0);
+
+        // AI-ın öz cəmlədiyi "total" tez-tez 4 alt-balın həqiqi cəmi ilə uyğun gəlmir (eynilə
+        // statistics sayğacındakı problem kimi) — ona görə etibar etmək əvəzinə özümüz cəmləyirik.
+        var total = Math.Round(s.Structure + s.Content + s.Grammar + s.Vocabulary, 1, MidpointRounding.AwayFromZero);
+
+        return new EssayScoresDto(
+            s.Structure, s.StructureComment ?? "",
+            s.Content, s.ContentComment ?? "",
+            s.Grammar, s.GrammarComment ?? "",
+            s.Vocabulary, s.VocabularyComment ?? "",
+            total);
+    }
 
     private static IReadOnlyList<EssayMistakeDto> MapMistakes(List<AiMistake>? mistakes)
     {
