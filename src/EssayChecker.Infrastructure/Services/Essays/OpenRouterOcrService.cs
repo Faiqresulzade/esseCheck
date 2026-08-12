@@ -1,6 +1,9 @@
+using System.Diagnostics;
+using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure.Ai;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
@@ -9,11 +12,13 @@ internal sealed class OpenRouterOcrService : IOcrService
 {
     private readonly OpenRouterClient _client;
     private readonly OpenRouterSettings _settings;
+    private readonly ILogger<OpenRouterOcrService> _logger;
 
-    public OpenRouterOcrService(OpenRouterClient client, IOptions<OpenRouterSettings> options)
+    public OpenRouterOcrService(OpenRouterClient client, IOptions<OpenRouterSettings> options, ILogger<OpenRouterOcrService> logger)
     {
         _client = client;
         _settings = options.Value;
+        _logger = logger;
     }
 
     public async Task<string> ExtractTextAsync(
@@ -39,7 +44,49 @@ internal sealed class OpenRouterOcrService : IOcrService
             }
         };
 
-        var text = await _client.CompleteAsync(_settings.OcrModel, messages, cancellationToken);
-        return text.Trim();
+        // OcrModel qəsdən pulsuzdur (xərci azaltmaq üçün), amma pulsuz vision modellərin
+        // OpenRouter-də paylaşılan, kiçik kvotası olduğu üçün rate-limitə (429) düşmə riski
+        // realdır (empirik test edilib) — ona görə essay-evaluator ilə eyni məhdud (ən çoxu 2
+        // cəhd) fallback naxışı tətbiq olunur.
+        var modelsToTry = string.IsNullOrWhiteSpace(_settings.OcrFallbackModel)
+            ? new[] { _settings.OcrModel }
+            : new[] { _settings.OcrModel, _settings.OcrFallbackModel };
+
+        Exception? lastError = null;
+        var stopwatch = Stopwatch.StartNew();
+
+        for (var i = 0; i < modelsToTry.Length; i++)
+        {
+            var model = modelsToTry[i];
+            var isFallback = i > 0;
+            var attemptStart = stopwatch.Elapsed;
+            try
+            {
+                var text = await _client.CompleteAsync(model, messages, cancellationToken);
+
+                if (isFallback)
+                {
+                    _logger.LogWarning(
+                        "Pulsuz OCR modeli uğursuz olduğu üçün pullu ehtiyat modelə ({Model}) yönləndirildi və uğurlu oldu (bu cəhd {ElapsedMs}ms, cəmi {TotalMs}ms).",
+                        model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
+                }
+
+                return text.Trim();
+            }
+            catch (AiServiceException ex) when (ex.IsTransient)
+            {
+                lastError = ex;
+                _logger.LogWarning(ex,
+                    "OCR modeli keçici xəta verdi (model {Model}, bu cəhd {ElapsedMs}ms).",
+                    model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds);
+            }
+            // Transient olmayan AiServiceException burada tutulmur — ehtiyat modelə keçmək
+            // mənasızdır, dərhal yuxarı ötürülür.
+        }
+
+        throw new AiServiceException(
+            $"OCR bütün modellərdən ({string.Join(", ", modelsToTry)}) sonra uğursuz oldu: {lastError?.Message}",
+            isTransient: true,
+            innerException: lastError);
     }
 }

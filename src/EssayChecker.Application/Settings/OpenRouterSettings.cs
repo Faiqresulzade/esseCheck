@@ -21,9 +21,19 @@ public sealed class OpenRouterSettings
     [Required]
     public string Model { get; set; } = null!;
 
-    /// <summary>Şəkildən mətn oxumaq (OCR) üçün vision model.</summary>
+    /// <summary>
+    /// Şəkildən mətn oxumaq (OCR) üçün vision model. Qəsdən pulsuz model (xərci azaltmaq üçün) —
+    /// pulsuz vision modellərin OpenRouter-də paylaşılan, kiçik kvotası olduğu üçün rate-limitə
+    /// düşmə riski var, ona görə <see cref="OcrFallbackModel"/> mütləq təyin olunmalıdır.
+    /// </summary>
     [Required]
     public string OcrModel { get; set; } = null!;
+
+    /// <summary>
+    /// OcrModel uğursuz olduqda (rate-limit, timeout, keçici xəta) müraciət olunacaq pullu
+    /// ehtiyat model. Opsionaldır — boş qalarsa fallback aktivləşmir.
+    /// </summary>
+    public string? OcrFallbackModel { get; set; }
 
     /// <summary>
     /// Əsas model (Model) uğursuz olduqda (JSON xətası, keçici xəta, ya da OpenRouter
