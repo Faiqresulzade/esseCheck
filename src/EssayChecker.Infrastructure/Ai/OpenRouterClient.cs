@@ -62,7 +62,27 @@ internal sealed class OpenRouterClient
 
         using (response)
         {
-            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            string body;
+            try
+            {
+                // Başlıqlar (headers) uğurla alınsa da (yuxarıdakı SendAsync bitib), böyük
+                // cavabın (məs. OCR/vision) bədənini oxuyarkən bağlantı kəsilə bilər — bu,
+                // ayrıca bir keçici xəta mənbəyidir və eyni cür AiServiceException-a
+                // çevrilməlidir, yoxsa tutulmamış istisna kimi generic 500-ə düşür.
+                body = await response.Content.ReadAsStringAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new AiServiceException("AI xidmətindən cavab vaxtı bitdi (timeout).", isTransient: true);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new AiServiceException("AI xidmətindən cavab oxunarkən bağlantı kəsildi.", isTransient: true, ex);
+            }
+            catch (IOException ex)
+            {
+                throw new AiServiceException("AI xidmətindən cavab oxunarkən bağlantı kəsildi.", isTransient: true, ex);
+            }
 
             if (!response.IsSuccessStatusCode)
             {
