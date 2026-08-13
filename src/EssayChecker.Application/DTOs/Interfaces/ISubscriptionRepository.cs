@@ -18,4 +18,10 @@ public interface ISubscriptionRepository
 
     /// <summary>İstifadəçinin "keepSubscriptionId"-dən başqa bütün aktiv abunəliklərini deaktiv edir (RTDN reconciliation üçün).</summary>
     Task DeactivateOthersAsync(int userId, int keepSubscriptionId, DateTime utcNow, CancellationToken cancellationToken = default);
+
+    /// <summary>İstifadəçinin heç olmasa bir abunəlik qeydi (status önəmli deyil) olub-olmadığını yoxlayır — referal mükafatı yalnız İLK abunəlikdə verilsin deyə.</summary>
+    Task<bool> HasAnyAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>İstifadəçinin ən son abunəlik qeydini (status önəmli deyil) qaytarır — referal mükafatı üçün uzadılacaq qeyd.</summary>
+    Task<UserSubscription?> GetMostRecentAsync(int userId, CancellationToken cancellationToken = default);
 }

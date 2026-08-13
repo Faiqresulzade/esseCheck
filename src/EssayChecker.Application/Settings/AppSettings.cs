@@ -23,4 +23,11 @@ public sealed class AppSettings
 
     /// <summary>Tətbiqin Play Store səhifəsinin tam linki — istifadəçi "Yenilə" düyməsinə basanda açılır.</summary>
     public string? PlayStoreUrl { get; set; }
+
+    /// <summary>
+    /// Referal (dəvət et, endirim qazan) proqramının açarı. Qəsdən defolt false-dur — kod tam
+    /// hazırdır, amma proqram rəsmən başlayana qədər deaktivdir. Lazım olanda Render-də
+    /// App__ReferralProgramEnabled=true edərək, redeploy tələb etmədən aktivləşdirilir.
+    /// </summary>
+    public bool ReferralProgramEnabled { get; set; } = false;
 }

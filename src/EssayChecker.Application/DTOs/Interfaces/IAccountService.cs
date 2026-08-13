@@ -11,4 +11,7 @@ public interface IAccountService
 
     /// <summary>Hesabı soft delete edir (IsDeleted=true) + token/abunəlikləri deaktiv edir.</summary>
     Task<AuthResult> DeleteAccountAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>İstifadəçinin dəvət kodunu qaytarır — hələ yoxdursa, lazy-generated edilib saxlanılır.</summary>
+    Task<ReferralInfoResponse> GetReferralInfoAsync(int userId, CancellationToken cancellationToken = default);
 }

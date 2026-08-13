@@ -6,6 +6,7 @@ using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -55,7 +56,8 @@ public sealed class AuthService : IAuthService
             UserName = request.Email,
             Email = request.Email,
             FullName = request.FullName,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            ReferredByUserId = await ResolveReferrerIdAsync(request.ReferralCode)
         };
 
         var result = await _userManager.CreateAsync(user, request.Password);
@@ -240,6 +242,19 @@ public sealed class AuthService : IAuthService
         }, cancellationToken);
 
         return raw;
+    }
+
+    /// <summary>Etibarsız/naməlum koddursa sükutla null qaytarır — qeydiyyatı heç vaxt bloklamır.</summary>
+    private async Task<int?> ResolveReferrerIdAsync(string? referralCode)
+    {
+        if (string.IsNullOrWhiteSpace(referralCode))
+            return null;
+
+        var normalized = referralCode.Trim().ToUpperInvariant();
+        var referrer = await _userManager.Users
+            .FirstOrDefaultAsync(u => u.ReferralCode == normalized);
+
+        return referrer?.Id;
     }
 
     private static string Hash(string value) =>

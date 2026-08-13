@@ -43,4 +43,15 @@ public class AccountController : ControllerBase
         var result = await _accountService.DeleteAccountAsync(UserId, cancellationToken);
         return result.Succeeded ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// İstifadəçinin dəvət kodu/linki — abunə olandan sonrakı popup-da və Ayarlar bölməsində
+    /// göstərilir. Kod hələ yoxdursa, ilk çağırışda yaradılır.
+    /// </summary>
+    [HttpGet("referral")]
+    public async Task<IActionResult> GetReferralInfo(CancellationToken cancellationToken)
+    {
+        var info = await _accountService.GetReferralInfoAsync(UserId, cancellationToken);
+        return Ok(info);
+    }
 }

@@ -22,4 +22,11 @@ public class RegisterRequest
 
     /// <summary>İstifadə şərtləri və Gizlilik siyasətinin qəbul edilməsi.</summary>
     public bool AcceptTerms { get; set; }
+
+    /// <summary>
+    /// Opsional — başqa istifadəçinin dəvət linkindən gələn kod. Etibarsız/naməlum koddursa
+    /// sükutla nəzərə alınmır, qeydiyyatı bloklamır.
+    /// </summary>
+    [MaxLength(10)]
+    public string? ReferralCode { get; set; }
 }

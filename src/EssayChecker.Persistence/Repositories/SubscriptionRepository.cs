@@ -64,4 +64,19 @@ public sealed class SubscriptionRepository : ISubscriptionRepository
                 .SetProperty(s => s.IsActive, false)
                 .SetProperty(s => s.UpdatedAt, utcNow), cancellationToken);
     }
+
+    public async Task<bool> HasAnyAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _db.UserSubscriptions
+            .AsNoTracking()
+            .AnyAsync(s => s.UserId == userId, cancellationToken);
+    }
+
+    public async Task<UserSubscription?> GetMostRecentAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await _db.UserSubscriptions
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }
