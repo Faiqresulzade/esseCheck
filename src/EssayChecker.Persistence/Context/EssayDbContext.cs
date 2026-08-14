@@ -1,5 +1,6 @@
 ﻿using EssayChecker.Domain.Entities.Essays;
 using EssayChecker.Domain.Entities.Logs;
+using EssayChecker.Domain.Entities.Marketing;
 using EssayChecker.Domain.Entities.Subscriptions;
 using EssayChecker.Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
@@ -28,6 +29,8 @@ public class EssayDbContext
     public DbSet<ProcessedGoogleNotification> ProcessedGoogleNotifications => Set<ProcessedGoogleNotification>();
 
     public DbSet<RequestLog> RequestLogs => Set<RequestLog>();
+
+    public DbSet<EnglishTeacher> EnglishTeachers => Set<EnglishTeacher>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
