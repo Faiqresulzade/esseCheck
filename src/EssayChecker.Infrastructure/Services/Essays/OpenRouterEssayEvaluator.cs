@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Essays;
 using EssayChecker.Application.DTOs.Interfaces;
@@ -179,7 +180,7 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         return new EssayEvaluationData
         {
             IsEssay = true,
-            CorrectedEssay = dto.CorrectedEssay ?? string.Empty,
+            CorrectedEssay = SanitizeCorrectedEssay(dto.CorrectedEssay ?? string.Empty),
             // AI-ın öz-özünə saydığı "statistics" tez-tez mistakes massivinin faktiki tərkibi
             // ilə uyğun gəlmir (bir neçə model üzərində test edilib, hamısında rast gəlindi) —
             // ona görə etibar etmək əvəzinə, statistikanı birbaşa artıq map olunmuş mistakes
@@ -257,15 +258,41 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         var result = new List<EssayMistakeDto>(mistakes.Count);
         foreach (var m in mistakes)
         {
+            var wrong = m.Wrong ?? string.Empty;
+            var correct = m.Correct ?? string.Empty;
+
+            // Promptun Section 5-i (self-check) AI-a "wrong" == "correct" olan elementləri
+            // heç vaxt daxil etməməyi əmr edir, amma model bəzən buna əməl etmir (istifadəçi
+            // production-da "reasons (reasons)" kimi hallar tapıb) — ona görə bunu AI-a etibar
+            // etmədən burada məcburi süzürük, eynilə digər "AI-a etibar etmə" qaydaları kimi.
+            if (string.Equals(wrong.Trim(), correct.Trim(), StringComparison.Ordinal))
+                continue;
+
             var category = Enum.TryParse<MistakeCategory>(m.Category, ignoreCase: true, out var parsed)
                 ? parsed
                 : MistakeCategory.Grammar;
 
-            result.Add(new EssayMistakeDto(m.Wrong ?? string.Empty, m.Correct ?? string.Empty, category, m.Reason ?? string.Empty));
+            result.Add(new EssayMistakeDto(wrong, correct, category, m.Reason ?? string.Empty));
         }
 
         return result;
     }
+
+    private static readonly Regex CorrectedEssayMarkupPattern = new(@"<b>(.*?)</b>\s*\((.*?)\)", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    /// <summary>
+    /// Section 11 AI-a &lt;b&gt;X&lt;/b&gt; (X) kimi eyni cütləri təmizləməyi əmr edir, amma model
+    /// bəzən buna əməl etmir — Section 5-dəki eyni no-op problemi correctedEssay mətnində də baş
+    /// verir. AI-a etibar etmədən, hər cütü tap və "wrong" ilə "correct" trim edilmiş halda
+    /// eynidirsə, işarələməni çıxarıb sadəcə orijinal sözü saxlayırıq.
+    /// </summary>
+    private static string SanitizeCorrectedEssay(string correctedEssay) =>
+        CorrectedEssayMarkupPattern.Replace(correctedEssay, match =>
+        {
+            var wrong = match.Groups[1].Value;
+            var correct = match.Groups[2].Value;
+            return string.Equals(wrong.Trim(), correct.Trim(), StringComparison.Ordinal) ? wrong : match.Value;
+        });
 
     private static TeacherFeedbackDto MapFeedback(AiFeedback? f) =>
         f is null
