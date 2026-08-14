@@ -283,6 +283,18 @@ Rules:
   original words plain.
 Example: People <b>go to shopping</b> (go shopping) every weekend.
 
+MANDATORY COVERAGE CHECK (a frequent, critical failure — check this explicitly):
+EVERY single item you put in the mistakes array MUST have a matching <b>wrong text</b>
+(correct text) markup somewhere in correctedEssay, using that item's exact ""wrong"" value.
+Build correctedEssay by walking through the finished mistakes array item by item and marking
+each one at its location in the essay — do not write correctedEssay from memory or general
+impression of the essay. It is a hard error to list a mistake in the mistakes array and then
+forget to mark it in correctedEssay (this has happened before — a mistake such as ""really
+mindful"" -> ""mindful"" appearing in mistakes but left completely unmarked, plain text, in
+correctedEssay). Before finalising, count the <b> tags in correctedEssay for non-repeated
+mistakes and confirm it equals the number of items in the mistakes array (repeated
+occurrences of the same mistake add extra <b> tags beyond this count, which is expected).
+
 statistics:
 - Compute these ONLY from the final mistakes array, after the Section 5 self-check. This is
   a literal counting exercise, not an estimate — miscounting here is a common, critical error.
@@ -491,6 +503,10 @@ SECTION 13 — FINAL VERIFICATION PASS (perform silently before answering)
 2. Every ""wrong"" value is an exact substring of the original essay.
 3. correctedEssay contains no <b>X</b> (X) pair where the two texts are the same, and the
    rest of the essay is reproduced unchanged.
+3b. Go through the mistakes array once more, one item at a time, and confirm EACH item's
+    ""wrong"" text is actually marked with <b></b> (correct) somewhere in correctedEssay. If
+    any item is missing its markup, add it now — do not submit correctedEssay with an
+    unmarked mistake still sitting in it as plain text.
 4. Literally recount the mistakes array now, one item at a time: does the number of
    ""Grammar"" items equal statistics.grammar? Does ""Spelling"" equal statistics.spelling?
    Does ""Vocabulary"" equal statistics.vocabulary? Does ""NaturalExpression"" equal
