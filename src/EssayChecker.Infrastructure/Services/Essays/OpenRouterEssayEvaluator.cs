@@ -177,10 +177,13 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             };
         }
 
+        var correctedEssay = SanitizeCorrectedEssay(dto.CorrectedEssay ?? string.Empty);
+        correctedEssay = EnsureAllMistakesMarked(correctedEssay, mistakes);
+
         return new EssayEvaluationData
         {
             IsEssay = true,
-            CorrectedEssay = SanitizeCorrectedEssay(dto.CorrectedEssay ?? string.Empty),
+            CorrectedEssay = correctedEssay,
             // AI-ın öz-özünə saydığı "statistics" tez-tez mistakes massivinin faktiki tərkibi
             // ilə uyğun gəlmir (bir neçə model üzərində test edilib, hamısında rast gəlindi) —
             // ona görə etibar etmək əvəzinə, statistikanı birbaşa artıq map olunmuş mistakes
@@ -293,6 +296,69 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             var correct = match.Groups[2].Value;
             return string.Equals(wrong.Trim(), correct.Trim(), StringComparison.Ordinal) ? wrong : match.Value;
         });
+
+    /// <summary>
+    /// Promptda (Section 11) AI-a hər mistakes elementini correctedEssay-də &lt;b&gt;wrong&lt;/b&gt;
+    /// (correct) kimi işarələməyi əmr edirik, amma model bəzən bunu unudur (istifadəçi
+    /// production-da "really mindful" → "mindful" kimi bir səhvin siyahıda olub, mətndə
+    /// işarələnməmiş qaldığını tapıb) — bu, statistikanın tutarlı görünüb, amma vizual
+    /// işarələmənin əskik olması şəklində qarışıqlıq yaradır. AI-a etibar etmədən, hər
+    /// mistake üçün mətndə artıq işarələnib-işarələnmədiyini yoxlayırıq, əskikdirsə özümüz
+    /// işarələyirik.
+    /// </summary>
+    private static string EnsureAllMistakesMarked(string correctedEssay, IReadOnlyList<EssayMistakeDto> mistakes)
+    {
+        if (mistakes.Count == 0 || string.IsNullOrEmpty(correctedEssay))
+            return correctedEssay;
+
+        foreach (var mistake in mistakes)
+        {
+            if (string.IsNullOrEmpty(mistake.Wrong))
+                continue;
+
+            var alreadyMarked = CorrectedEssayBoldSpanPattern.Matches(correctedEssay)
+                .Any(m => string.Equals(m.Groups[1].Value.Trim(), mistake.Wrong.Trim(), StringComparison.Ordinal));
+            if (alreadyMarked)
+                continue;
+
+            var index = FindUnmarkedOccurrence(correctedEssay, mistake.Wrong);
+            if (index < 0)
+                continue; // Mətndə tapılmadı (AI mətni fərqli yazıb) — sükutla keçirik, statistics/mistakes hələ də düzgündür.
+
+            var replacement = $"<b>{mistake.Wrong}</b> ({mistake.Correct})";
+            correctedEssay = string.Concat(
+                correctedEssay.AsSpan(0, index),
+                replacement,
+                correctedEssay.AsSpan(index + mistake.Wrong.Length));
+        }
+
+        return correctedEssay;
+    }
+
+    private static readonly Regex CorrectedEssayBoldSpanPattern = new(@"<b>(.*?)</b>", RegexOptions.Compiled | RegexOptions.Singleline);
+
+    /// <summary>"wrong" mətninin correctedEssay-də hələ &lt;b&gt;&lt;/b&gt; içinə alınmamış ilk uyğun yerini tapır.</summary>
+    private static int FindUnmarkedOccurrence(string correctedEssay, string wrong)
+    {
+        var searchStart = 0;
+        while (true)
+        {
+            var index = correctedEssay.IndexOf(wrong, searchStart, StringComparison.Ordinal);
+            if (index < 0)
+                return -1;
+
+            var lastOpenTag = correctedEssay.LastIndexOf("<b>", index, StringComparison.Ordinal);
+            var lastCloseTag = correctedEssay.LastIndexOf("</b>", index, StringComparison.Ordinal);
+            var isInsideBoldTag = lastOpenTag > lastCloseTag;
+
+            if (!isInsideBoldTag)
+                return index;
+
+            searchStart = index + wrong.Length;
+            if (searchStart >= correctedEssay.Length)
+                return -1;
+        }
+    }
 
     private static TeacherFeedbackDto MapFeedback(AiFeedback? f) =>
         f is null
