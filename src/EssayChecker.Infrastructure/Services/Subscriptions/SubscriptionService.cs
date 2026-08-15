@@ -5,20 +5,14 @@ using EssayChecker.Application.DTOs.Subscriptions;
 using EssayChecker.Application.Settings;
 using EssayChecker.Application.Subscriptions;
 using EssayChecker.Domain.Entities.Subscriptions;
-using EssayChecker.Domain.Entities.Users;
 using EssayChecker.Domain.Enums;
 using EssayChecker.Infrastructure.GooglePlay;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EssayChecker.Infrastructure.Services.Subscriptions;
 
 public sealed class SubscriptionService : ISubscriptionService
 {
-    /// <summary>Referal mükafatı — dəvət edənin abunəliyinə əlavə olunan gün sayı (~aylıq dəyərin 20%-i).</summary>
-    private const int ReferralBonusDays = 6;
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -27,30 +21,24 @@ public sealed class SubscriptionService : ISubscriptionService
     private readonly ISubscriptionRepository _repository;
     private readonly IGooglePlayPurchaseVerifier _googleVerifier;
     private readonly IProcessedNotificationRepository _processedNotifications;
+    private readonly IReferralRewardService _referralRewards;
     private readonly GooglePlaySettings _googlePlaySettings;
     private readonly TestingSettings _testingSettings;
-    private readonly AppSettings _appSettings;
-    private readonly UserManager<AppUser> _userManager;
-    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
         ISubscriptionRepository repository,
         IGooglePlayPurchaseVerifier googleVerifier,
         IProcessedNotificationRepository processedNotifications,
+        IReferralRewardService referralRewards,
         IOptions<GooglePlaySettings> googlePlaySettings,
-        IOptions<TestingSettings> testingSettings,
-        IOptions<AppSettings> appSettings,
-        UserManager<AppUser> userManager,
-        ILogger<SubscriptionService> logger)
+        IOptions<TestingSettings> testingSettings)
     {
         _repository = repository;
         _googleVerifier = googleVerifier;
         _processedNotifications = processedNotifications;
+        _referralRewards = referralRewards;
         _googlePlaySettings = googlePlaySettings.Value;
         _testingSettings = testingSettings.Value;
-        _appSettings = appSettings.Value;
-        _userManager = userManager;
-        _logger = logger;
     }
 
     public async Task<SubscriptionPlan> GetActivePlanAsync(int userId, CancellationToken cancellationToken = default)
@@ -147,12 +135,9 @@ public sealed class SubscriptionService : ISubscriptionService
         if (!state.IsAcknowledged)
             await _googleVerifier.AcknowledgeAsync(request.ProductId, request.PurchaseToken, cancellationToken);
 
-        // Referal mükafatı yalnız istifadəçinin HƏQİQƏTƏN İLK abunəliyində verilməlidir (yoxsa
-        // hər yeniləmə/plan dəyişikliyi təkrar mükafat gətirərdi) — ona görə bu, hər hansı
-        // mutasiyadan (DeactivateAllAsync, Add/Update) ƏVVƏL, təmiz vəziyyətdə yoxlanılır.
-        // Proqram deaktivdirsə (AppSettings.ReferralProgramEnabled=false) lazımsız sorğu edilmir.
-        var isFirstEverSubscription = _appSettings.ReferralProgramEnabled
-            && !await _repository.HasAnyAsync(userId, cancellationToken);
+        // Bu, hər hansı mutasiyadan (DeactivateAllAsync, Add/Update) ƏVVƏL, təmiz vəziyyətdə
+        // yoxlanılmalıdır — əks halda indi yazılacaq abunəlik "ilk deyil" kimi görünərdi.
+        var isFirstEverSubscription = await _referralRewards.IsRewardTriggerAsync(userId, cancellationToken);
 
         var now = DateTime.UtcNow;
 
@@ -192,75 +177,9 @@ public sealed class SubscriptionService : ISubscriptionService
         }
 
         if (isFirstEverSubscription)
-            await TryGrantReferralRewardAsync(userId, cancellationToken);
+            await _referralRewards.TryGrantRewardAsync(userId, cancellationToken);
 
         return Map(subscription);
-    }
-
-    /// <summary>
-    /// <paramref name="referredUserId"/> kiminsə referal koduyla qeydiyyatdan keçibsə və mükafat
-    /// hələ verilməyibsə, dəvət edənin abunəliyinə <see cref="ReferralBonusDays"/> gün əlavə edir.
-    /// Bu, gözlənilməz vəziyyətlərdə (referrer tapılmır və s.) əsas satınalma axınını pozmamalıdır
-    /// — ona görə bütün xətalar udulub yalnız loglanır.
-    /// </summary>
-    private async Task TryGrantReferralRewardAsync(int referredUserId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (!_appSettings.ReferralProgramEnabled)
-                return;
-
-            var referredUser = await _userManager.FindByIdAsync(referredUserId.ToString());
-            if (referredUser?.ReferredByUserId is not int referrerId || referredUser.ReferralRewardGranted)
-                return;
-
-            var now = DateTime.UtcNow;
-            var referrerSubscription = await _repository.GetMostRecentAsync(referrerId, cancellationToken);
-
-            // Mükafat həmişə TAM 6 real gün verməlidir — abunəlik artıq bitmişsə "indi"dən,
-            // hələ aktivdirsə mövcud bitmə tarixindən hesablanır (əks halda köhnə tarixə 6 gün
-            // əlavə etmək istifadəçiyə faktiki heç nə qazandırmazdı).
-            var baseDate = referrerSubscription?.EndDate is { } existingEnd && existingEnd > now ? existingEnd : now;
-            var newEndDate = baseDate.AddDays(ReferralBonusDays);
-
-            if (referrerSubscription is null)
-            {
-                // Gözlənilməz hal — dəvət linkini paylaşmaq üçün istifadəçi artıq abunə olmalı
-                // idi. Bonusu itirməmək üçün yenə də yeni bir abunəlik qeydi yaradılır.
-                referrerSubscription = new UserSubscription
-                {
-                    UserId = referrerId,
-                    Plan = SubscriptionPlan.Pro,
-                    StartDate = now,
-                    EndDate = newEndDate,
-                    IsActive = true,
-                    Platform = SubscriptionPlatform.Manual,
-                    CreatedAt = now,
-                    UpdatedAt = now
-                };
-                await _repository.AddAsync(referrerSubscription, cancellationToken);
-            }
-            else
-            {
-                referrerSubscription.EndDate = newEndDate;
-                referrerSubscription.IsActive = true;
-                referrerSubscription.UpdatedAt = now;
-                await _repository.UpdateAsync(referrerSubscription, cancellationToken);
-            }
-
-            referredUser.ReferralRewardGranted = true;
-            await _userManager.UpdateAsync(referredUser);
-
-            _logger.LogInformation(
-                "Referal mükafatı verildi: dəvət edən {ReferrerId} istifadəçisinin abunəliyi {NewEndDate}-ə qədər uzadıldı (dəvət edilən: {ReferredUserId}).",
-                referrerId, newEndDate, referredUserId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "Referal mükafatı verilərkən xəta baş verdi (dəvət edilən istifadəçi: {ReferredUserId}). Əsas satınalma axını təsirlənmədi.",
-                referredUserId);
-        }
     }
 
     public async Task ProcessGooglePlayNotificationAsync(

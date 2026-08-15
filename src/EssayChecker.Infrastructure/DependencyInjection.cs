@@ -58,6 +58,7 @@ public static class DependencyInjection
 
         // Subscription / Daily limit
         services.AddScoped<ISubscriptionService, SubscriptionService>();
+        services.AddScoped<IReferralRewardService, ReferralRewardService>();
         services.AddScoped<IUsageLimitService, UsageLimitService>();
 
         // Google Play Billing (server-side satınalma təsdiqi)
