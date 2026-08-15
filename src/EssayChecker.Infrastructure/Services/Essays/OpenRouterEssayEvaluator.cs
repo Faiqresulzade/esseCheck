@@ -321,15 +321,33 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             if (alreadyMarked)
                 continue;
 
-            var index = FindUnmarkedOccurrence(correctedEssay, mistake.Wrong);
-            if (index < 0)
-                continue; // Mətndə tapılmadı (AI mətni fərqli yazıb) — sükutla keçirik, statistics/mistakes hələ də düzgündür.
+            var wrongIndex = FindUnmarkedOccurrence(correctedEssay, mistake.Wrong);
+            if (wrongIndex >= 0)
+            {
+                var replacement = $"<b>{mistake.Wrong}</b> ({mistake.Correct})";
+                correctedEssay = string.Concat(
+                    correctedEssay.AsSpan(0, wrongIndex),
+                    replacement,
+                    correctedEssay.AsSpan(wrongIndex + mistake.Wrong.Length));
+                continue;
+            }
 
-            var replacement = $"<b>{mistake.Wrong}</b> ({mistake.Correct})";
+            // "wrong" mətni tapılmadı — bu, tez-tez AI-ın Section 11-i pozaraq düzəlişi
+            // sükutla mətnə yazıb ("wrong"-u "correct" ilə əvəz edib), işarələməyi unutması
+            // deməkdir. Bu halda "correct" mətnini axtarıb, onu <b>wrong</b> (correct) ilə
+            // əvəz edirik ki, hər iki tərəf (orijinal və düzəliş) görünsün.
+            if (string.IsNullOrEmpty(mistake.Correct))
+                continue;
+
+            var correctIndex = FindUnmarkedOccurrence(correctedEssay, mistake.Correct);
+            if (correctIndex < 0)
+                continue; // Nə "wrong", nə "correct" tapılmadı — sükutla keçirik, statistics/mistakes hələ də düzgündür.
+
+            var fallbackReplacement = $"<b>{mistake.Wrong}</b> ({mistake.Correct})";
             correctedEssay = string.Concat(
-                correctedEssay.AsSpan(0, index),
-                replacement,
-                correctedEssay.AsSpan(index + mistake.Wrong.Length));
+                correctedEssay.AsSpan(0, correctIndex),
+                fallbackReplacement,
+                correctedEssay.AsSpan(correctIndex + mistake.Correct.Length));
         }
 
         return correctedEssay;
