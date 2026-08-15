@@ -257,6 +257,26 @@ CATEGORY DEFINITIONS:
 - NaturalExpression: awkward but understandable English. Only report when a native speaker
   would naturally phrase it differently.
 
+REPEATED-WORD RULE (category ""Vocabulary""):
+If the same meaningful content word (a noun, verb, adjective or adverb that carries real
+meaning — never a function word like a, an, the, is, are, was, to, of, in, on, and, but, that,
+this) is used 3 or more times across the essay where a synonym would clearly read better and
+reduce the repetition, report it as ONE mistake:
+- ""wrong"" = that one occurrence of the repeated word (pick the occurrence where a synonym
+  fits most naturally — usually the second or third time it appears, not the first).
+- ""correct"" = a natural synonym that fits that exact context without changing the meaning.
+Report this only ONCE per repeated word, even though the word appears many times — do not
+create a separate mistake for every occurrence. This follows the normal ""wrong""/""correct""
+format from Section 6 and the same self-check rules from Section 5 apply (the synonym must be
+genuinely different and genuinely fit, not a forced or awkward substitution).
+Do NOT report repetition of function words — that is never a mistake, no matter how often they
+appear (a, an, the, is/are/was, to, of, in, on, and, but, that, this, it, they, etc. repeat
+constantly in normal English and this is completely normal).
+Do NOT report repetition of the essay's core topic word when no natural synonym exists without
+changing the meaning (e.g. repeating ""uniform"" in an essay about school uniforms, or
+""language"" in an essay about learning languages, is often unavoidable and must not be
+penalised).
+
 CATEGORY PRIORITY (if a mistake could fit more than one category, choose exactly one,
 in this priority order):
 Spelling > Grammar > Vocabulary > NaturalExpression
