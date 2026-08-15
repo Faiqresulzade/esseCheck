@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using EssayChecker.Api.Models;
@@ -15,7 +14,7 @@ namespace EssayChecker.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
-public class SubscriptionController : ControllerBase
+public class SubscriptionController : ApiControllerBase
 {
     private readonly ISubscriptionService _subscriptionService;
     private readonly IUsageLimitService _usageLimitService;
@@ -33,8 +32,6 @@ public class SubscriptionController : ControllerBase
         _googlePlaySettings = googlePlaySettings.Value;
         _logger = logger;
     }
-
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     /// <summary>Plan kataloqu (Planlar ekranı).</summary>
     [AllowAnonymous]

@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using EssayChecker.Application.DTOs.Essays;
 using EssayChecker.Application.DTOs.Interfaces;
+using EssayChecker.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,7 @@ namespace EssayChecker.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
-public class EssayController : ControllerBase
+public class EssayController : ApiControllerBase
 {
     private readonly IEssayService _essayService;
     private readonly IUsageLimitService _usageLimitService;
@@ -21,8 +21,6 @@ public class EssayController : ControllerBase
         _usageLimitService = usageLimitService;
     }
 
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
     /// <summary>
     /// Mətni AI ilə qiymətləndirir və tarixçəyə yazır (gündəlik limit yoxlanır). Yalnız 11-ci
     /// sinif — 9-cu sinif DİM formatına görə tam şəkil-əsaslıdır, bax /evaluate/grade9-images.
@@ -30,7 +28,7 @@ public class EssayController : ControllerBase
     [HttpPost("evaluate")]
     public async Task<IActionResult> Evaluate([FromBody] EvaluateEssayRequest request, CancellationToken cancellationToken)
     {
-        if (request.Grade == EssayChecker.Domain.Enums.GradeLevel.Grade9)
+        if (request.Grade == GradeLevel.Grade9)
         {
             return BadRequest(new
             {
@@ -38,9 +36,9 @@ public class EssayController : ControllerBase
             });
         }
 
-        var decision = await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
-        if (!decision.Allowed)
-            return StatusCode(StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
+        var denied = await CheckUsageAsync(hasImages: false, cancellationToken);
+        if (denied is not null)
+            return denied;
 
         var result = await _essayService.EvaluateAsync(UserId, request, cancellationToken);
         if (!result.Success)
@@ -56,14 +54,14 @@ public class EssayController : ControllerBase
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Ocr(IFormFile image, CancellationToken cancellationToken)
     {
-        var decision = await _usageLimitService.CheckOcrAsync(UserId, cancellationToken);
-        if (!decision.Allowed)
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = decision.Reason });
+        var denied = await CheckUsageAsync(hasImages: true, cancellationToken);
+        if (denied is not null)
+            return denied;
 
         if (image is null || image.Length == 0)
             return BadRequest(new { message = "Şəkil tələb olunur." });
 
-        if (string.IsNullOrEmpty(image.ContentType) || !image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        if (!IsImage(image))
             return BadRequest(new { message = "Yalnız şəkil faylı qəbul olunur." });
 
         await using var stream = image.OpenReadStream();
@@ -97,24 +95,16 @@ public class EssayController : ControllerBase
             .Select(f => f!)
             .ToList();
 
-        if (files.Any(f => string.IsNullOrEmpty(f.ContentType) || !f.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)))
+        if (files.Any(f => !IsImage(f)))
             return BadRequest(new { message = "Yalnız şəkil faylları qəbul olunur." });
 
         var hasImages = files.Count > 0;
 
-        var decision = hasImages
-            ? await _usageLimitService.CheckOcrAsync(UserId, cancellationToken)
-            : await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
-        if (!decision.Allowed)
-            return StatusCode(hasImages ? StatusCodes.Status403Forbidden : StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
+        var denied = await CheckUsageAsync(hasImages, cancellationToken);
+        if (denied is not null)
+            return denied;
 
-        var promptImages = new List<PromptImage>(files.Count);
-        foreach (var file in files)
-        {
-            using var memory = new MemoryStream();
-            await file.CopyToAsync(memory, cancellationToken);
-            promptImages.Add(new PromptImage(memory.ToArray(), file.ContentType));
-        }
+        var promptImages = await ToPromptImagesAsync(files, cancellationToken);
 
         var result = await _essayService.EvaluateGrade9WithImagesAsync(UserId, text, title, promptImages, cancellationToken);
         if (!result.Success)
@@ -126,6 +116,39 @@ public class EssayController : ControllerBase
             await _usageLimitService.ConsumeTextAsync(UserId, cancellationToken);
 
         return Ok(result.Essay);
+    }
+
+    /// <summary>
+    /// Şəkil varsa OCR/vision limitini (yalnız Pro Plus), yoxdursa adi gündəlik mətn limitini
+    /// yoxlayır. İcazə yoxdursa müvafiq HTTP statuslu cavab qaytarır, varsa null.
+    /// </summary>
+    private async Task<IActionResult?> CheckUsageAsync(bool hasImages, CancellationToken cancellationToken)
+    {
+        var decision = hasImages
+            ? await _usageLimitService.CheckOcrAsync(UserId, cancellationToken)
+            : await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
+
+        if (decision.Allowed)
+            return null;
+
+        var statusCode = hasImages ? StatusCodes.Status403Forbidden : StatusCodes.Status429TooManyRequests;
+        return StatusCode(statusCode, new { message = decision.Reason });
+    }
+
+    private static bool IsImage(IFormFile file) =>
+        !string.IsNullOrEmpty(file.ContentType) && file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task<List<PromptImage>> ToPromptImagesAsync(IReadOnlyList<IFormFile> files, CancellationToken cancellationToken)
+    {
+        var promptImages = new List<PromptImage>(files.Count);
+        foreach (var file in files)
+        {
+            using var memory = new MemoryStream();
+            await file.CopyToAsync(memory, cancellationToken);
+            promptImages.Add(new PromptImage(memory.ToArray(), file.ContentType));
+        }
+
+        return promptImages;
     }
 
     /// <summary>Tarixçə siyahısı (səhifələnmiş, axtarış opsional). page ən azı 1, pageSize 1–100 aralığında.</summary>

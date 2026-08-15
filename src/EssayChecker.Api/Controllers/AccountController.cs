@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using EssayChecker.Application.DTOs.Account;
 using EssayChecker.Application.DTOs.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +8,7 @@ namespace EssayChecker.Api.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
-public class AccountController : ControllerBase
+public class AccountController : ApiControllerBase
 {
     private readonly IAccountService _accountService;
 
@@ -17,8 +16,6 @@ public class AccountController : ControllerBase
     {
         _accountService = accountService;
     }
-
-    private int UserId => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     /// <summary>Profili redaktə et (ad/soyad).</summary>
     [HttpPut("profile")]
