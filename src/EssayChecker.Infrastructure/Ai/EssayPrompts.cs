@@ -260,10 +260,10 @@ CATEGORY DEFINITIONS:
 REPEATED-WORD RULE (category ""Vocabulary""):
 If the same meaningful content word (a noun, verb, adjective or adverb that carries real
 meaning — never a function word like a, an, the, is, are, was, to, of, in, on, and, but, that,
-this) is used 3 or more times across the essay where a synonym would clearly read better and
+this) is used 2 or more times across the essay where a synonym would clearly read better and
 reduce the repetition, report it as ONE mistake:
 - ""wrong"" = that one occurrence of the repeated word (pick the occurrence where a synonym
-  fits most naturally — usually the second or third time it appears, not the first).
+  fits most naturally — usually the second time it appears, not the first).
 - ""correct"" = a natural synonym that fits that exact context without changing the meaning.
 Report this only ONCE per repeated word, even though the word appears many times — do not
 create a separate mistake for every occurrence. This follows the normal ""wrong""/""correct""
