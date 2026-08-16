@@ -17,7 +17,7 @@ public static class PlanCatalog
                 "Tarixçə (pulsuz)"
             }),
         new PlanInfoResponse(
-            SubscriptionPlan.Pro, "Pro", 4.99m, "AZN", "ay",
+            SubscriptionPlan.Pro, "Pro", 2.99m, "USD", "ay",
             UnlimitedText: true, DailyTextLimit: null, Ocr: false,
             Features: new[]
             {
@@ -25,7 +25,7 @@ public static class PlanCatalog
                 "Tarixçə (pulsuz)"
             }),
         new PlanInfoResponse(
-            SubscriptionPlan.ProPlus, "Pro Plus", 9.99m, "AZN", "ay",
+            SubscriptionPlan.ProPlus, "Pro Plus", 5.99m, "USD", "ay",
             UnlimitedText: true, DailyTextLimit: null, Ocr: true,
             Features: new[]
             {
