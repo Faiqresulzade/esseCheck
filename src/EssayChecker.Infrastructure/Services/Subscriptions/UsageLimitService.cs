@@ -4,6 +4,12 @@ using EssayChecker.Application.Subscriptions;
 
 namespace EssayChecker.Infrastructure.Services.Subscriptions;
 
+/// <summary>
+/// Mətnlə və şəkillə (OCR) yoxlama arasında fərq qoyulmur — hər ikisi eyni gündəlik limitə
+/// (<see cref="PlanPolicy.DailyLimit"/>) sayılır. Text/Ocr sayğacları yalnız analitika üçün
+/// ayrıca saxlanılır (bax DailyUsage.TextCheckCount/OcrCheckCount); limit yoxlaması hər zaman
+/// ikisinin CƏMİNƏ görə aparılır.
+/// </summary>
 public sealed class UsageLimitService : IUsageLimitService
 {
     private readonly ISubscriptionService _subscriptionService;
@@ -17,59 +23,55 @@ public sealed class UsageLimitService : IUsageLimitService
         _usageRepository = usageRepository;
     }
 
-    public async Task<UsageDecision> CheckTextAsync(int userId, CancellationToken cancellationToken = default)
-    {
-        var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
-        var limit = PlanPolicy.DailyTextLimit(plan);
-
-        if (limit is null)
-            return UsageDecision.Allow();
-
-        var used = await GetTextUsedTodayAsync(userId, cancellationToken);
-
-        return used >= limit.Value
-            ? UsageDecision.Deny($"Bugünkü pulsuz limit ({limit}) bitib. Sabah yenilənəcək və ya Pro planına keçin.")
-            : UsageDecision.Allow();
-    }
+    public Task<UsageDecision> CheckTextAsync(int userId, CancellationToken cancellationToken = default) =>
+        CheckAsync(userId, cancellationToken);
 
     public Task ConsumeTextAsync(int userId, CancellationToken cancellationToken = default) =>
         _usageRepository.IncrementTextAsync(userId, TodayUtc(), cancellationToken);
 
-    public async Task<UsageDecision> CheckOcrAsync(int userId, CancellationToken cancellationToken = default)
-    {
-        var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
-
-        return PlanPolicy.CanUseOcr(plan)
-            ? UsageDecision.Allow()
-            : UsageDecision.Deny("Şəkildən esse oxuma yalnız Pro Plus üçün əlçatandır.");
-    }
+    public Task<UsageDecision> CheckOcrAsync(int userId, CancellationToken cancellationToken = default) =>
+        CheckAsync(userId, cancellationToken);
 
     public Task ConsumeOcrAsync(int userId, CancellationToken cancellationToken = default) =>
         _usageRepository.IncrementOcrAsync(userId, TodayUtc(), cancellationToken);
 
+    private async Task<UsageDecision> CheckAsync(int userId, CancellationToken cancellationToken)
+    {
+        var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
+        var limit = PlanPolicy.DailyLimit(plan);
+
+        if (limit is null)
+            return UsageDecision.Allow();
+
+        var used = await GetUsedTodayAsync(userId, cancellationToken);
+
+        return used >= limit.Value
+            ? UsageDecision.Deny($"Bugünkü limit ({limit}) bitib. Sabah yenilənəcək və ya planınızı yüksəldin.")
+            : UsageDecision.Allow();
+    }
+
     public async Task<DailyUsageStatusResponse> GetStatusAsync(int userId, CancellationToken cancellationToken = default)
     {
         var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
-        var limit = PlanPolicy.DailyTextLimit(plan);
-        var used = await GetTextUsedTodayAsync(userId, cancellationToken);
+        var limit = PlanPolicy.DailyLimit(plan);
+        var used = await GetUsedTodayAsync(userId, cancellationToken);
 
         int? remaining = limit is null ? null : Math.Max(0, limit.Value - used);
         var resetAtUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
 
         return new DailyUsageStatusResponse(
             plan,
-            PlanPolicy.UnlimitedText(plan),
+            PlanPolicy.IsUnlimited(plan),
             limit,
             used,
             remaining,
-            PlanPolicy.CanUseOcr(plan),
             resetAtUtc);
     }
 
-    private async Task<int> GetTextUsedTodayAsync(int userId, CancellationToken cancellationToken)
+    private async Task<int> GetUsedTodayAsync(int userId, CancellationToken cancellationToken)
     {
         var usage = await _usageRepository.GetAsync(userId, TodayUtc(), cancellationToken);
-        return usage?.TextCheckCount ?? 0;
+        return (usage?.TextCheckCount ?? 0) + (usage?.OcrCheckCount ?? 0);
     }
 
     private static DateOnly TodayUtc() => DateOnly.FromDateTime(DateTime.UtcNow);

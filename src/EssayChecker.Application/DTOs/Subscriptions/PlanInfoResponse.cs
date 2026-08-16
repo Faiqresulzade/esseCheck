@@ -8,7 +8,6 @@ public sealed record PlanInfoResponse(
     decimal Price,
     string Currency,
     string Period,
-    bool UnlimitedText,
-    int? DailyTextLimit,
-    bool Ocr,
+    bool Unlimited,
+    int? DailyLimit,
     IReadOnlyList<string> Features);

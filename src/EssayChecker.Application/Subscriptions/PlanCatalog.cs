@@ -9,28 +9,27 @@ public static class PlanCatalog
     public static IReadOnlyList<PlanInfoResponse> All { get; } = new[]
     {
         new PlanInfoResponse(
-            SubscriptionPlan.Free, "Free", 0m, "AZN", "ay",
-            UnlimitedText: false, DailyTextLimit: 1, Ocr: false,
+            SubscriptionPlan.Free, "Free", 0m, "USD", "ay",
+            Unlimited: false, DailyLimit: 1,
             Features: new[]
             {
-                "Gündə 1 esse şansı (mətnlə yaz)",
+                "Gündə 1 esse şansı (mətnlə və ya şəkillə)",
                 "Tarixçə (pulsuz)"
             }),
         new PlanInfoResponse(
             SubscriptionPlan.Pro, "Pro", 2.99m, "USD", "ay",
-            UnlimitedText: true, DailyTextLimit: null, Ocr: false,
+            Unlimited: false, DailyLimit: 10,
             Features: new[]
             {
-                "Limitsiz esse (mətnlə yaz)",
+                "Gündə 10 esse şansı (mətnlə və ya şəkillə)",
                 "Tarixçə (pulsuz)"
             }),
         new PlanInfoResponse(
             SubscriptionPlan.ProPlus, "Pro Plus", 5.99m, "USD", "ay",
-            UnlimitedText: true, DailyTextLimit: null, Ocr: true,
+            Unlimited: true, DailyLimit: null,
             Features: new[]
             {
-                "Limitsiz esse (mətnlə yaz)",
-                "Limitsiz esse (şəkildən oxu)",
+                "Limitsiz esse (mətnlə və ya şəkillə)",
                 "Tarixçə (pulsuz)"
             })
     };

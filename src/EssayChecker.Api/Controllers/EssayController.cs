@@ -49,7 +49,7 @@ public class EssayController : ApiControllerBase
         return Ok(result.Essay);
     }
 
-    /// <summary>Şəkildən mətn oxuyur (OCR) — yalnız Pro Plus. İstifadəçi baxıb düzəldəcək.</summary>
+    /// <summary>Şəkildən mətn oxuyur (OCR) — gündəlik limit mətnlə eyni sayğaca daxildir. İstifadəçi baxıb düzəldəcək.</summary>
     [HttpPost("ocr")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Ocr(IFormFile image, CancellationToken cancellationToken)
@@ -73,9 +73,9 @@ public class EssayController : ApiControllerBase
 
     /// <summary>
     /// 9-cu sinif — DİM formatı: tələbəyə verilən promt-şəkilləri (yazı tapşırığı, 0-3 ədəd,
-    /// hamısı opsionaldır) + yazdığı esse mətni. Şəkil göndərilməzsə adi mətn limiti (gündəlik),
-    /// şəkil göndərilərsə OCR/vision limiti (yalnız Pro Plus) tətbiq olunur — çünki yalnız o
-    /// halda vision resursu istifadə olunur. Grade həmişə Grade9-dur, ayrıca sahə göndərilmir.
+    /// hamısı opsionaldır) + yazdığı esse mətni. Şəkilli olsun ya olmasın, eyni gündəlik
+    /// limitə (bax PlanPolicy.DailyLimit) sayılır. Grade həmişə Grade9-dur, ayrıca sahə
+    /// göndərilmir.
     /// </summary>
     [HttpPost("evaluate/grade9-images")]
     [RequestSizeLimit(15 * 1024 * 1024)]
@@ -119,8 +119,8 @@ public class EssayController : ApiControllerBase
     }
 
     /// <summary>
-    /// Şəkil varsa OCR/vision limitini (yalnız Pro Plus), yoxdursa adi gündəlik mətn limitini
-    /// yoxlayır. İcazə yoxdursa müvafiq HTTP statuslu cavab qaytarır, varsa null.
+    /// Gündəlik limiti yoxlayır (mətn və şəkil eyni sayğaca daxildir). İcazə yoxdursa 429
+    /// (Too Many Requests) qaytarır, varsa null.
     /// </summary>
     private async Task<IActionResult?> CheckUsageAsync(bool hasImages, CancellationToken cancellationToken)
     {
@@ -128,11 +128,9 @@ public class EssayController : ApiControllerBase
             ? await _usageLimitService.CheckOcrAsync(UserId, cancellationToken)
             : await _usageLimitService.CheckTextAsync(UserId, cancellationToken);
 
-        if (decision.Allowed)
-            return null;
-
-        var statusCode = hasImages ? StatusCodes.Status403Forbidden : StatusCodes.Status429TooManyRequests;
-        return StatusCode(statusCode, new { message = decision.Reason });
+        return decision.Allowed
+            ? null
+            : StatusCode(StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
     }
 
     private static bool IsImage(IFormFile file) =>
