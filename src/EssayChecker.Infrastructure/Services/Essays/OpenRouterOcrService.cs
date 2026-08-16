@@ -44,10 +44,11 @@ internal sealed class OpenRouterOcrService : IOcrService
             }
         };
 
-        // OcrModel qəsdən pulsuzdur (xərci azaltmaq üçün), amma pulsuz vision modellərin
-        // OpenRouter-də paylaşılan, kiçik kvotası olduğu üçün rate-limitə (429) düşmə riski
-        // realdır (empirik test edilib) — ona görə essay-evaluator ilə eyni məhdud (ən çoxu 2
-        // cəhd) fallback naxışı tətbiq olunur.
+        // OcrModel əsas (pullu, etibarlı) modeldir — pulsuz vision modellərin transkripsiya
+        // keyfiyyəti aşağı olduğu üçün (mətni özbaşına qısaldıb təhrif etdiyi müşahidə edilib)
+        // keyfiyyət üstünlük təşkil edir. Yalnız əsas model keçici xəta versə (məs. kredit
+        // bitməsi = 402, rate-limit = 429) OcrFallbackModel (pulsuz) sınanır — ən çoxu 2 cəhd,
+        // essay-evaluator ilə eyni fallback naxışı.
         var modelsToTry = string.IsNullOrWhiteSpace(_settings.OcrFallbackModel)
             ? new[] { _settings.OcrModel }
             : new[] { _settings.OcrModel, _settings.OcrFallbackModel };
