@@ -329,6 +329,22 @@ correctedEssay). Before finalising, count the <b> tags in correctedEssay for non
 mistakes and confirm it equals the number of items in the mistakes array (repeated
 occurrences of the same mistake add extra <b> tags beyond this count, which is expected).
 
+REVERSE COVERAGE CHECK — the other direction, equally mandatory and equally a hard error:
+correctedEssay must NEVER contain any change to the student's wording that is not backed by a
+<b>wrong</b> (correct) markup AND a matching entry in the mistakes array. Never silently
+""pre-fix"" something in correctedEssay — inserting a comma, swapping a word, adding a word —
+without wrapping it in <b></b> and also listing it in mistakes. This has happened before: an
+essay literally starting with ""In my opinion AI will..."" came back as ""In my opinion,
+AI will..."" with a plain, unmarked comma silently inserted after ""opinion"" — while a
+completely unrelated, invented comma (""AI will make human life easier"" -> ""...easier,"")
+was marked instead, at a position with no real error. Both halves of this are hard failures:
+(a) silently changing text outside of any marked+listed mistake, and (b) inventing a mistake
+at a location that is not actually wrong. Before finalising, do this check: if you removed
+the <b></b> tags and parenthetical corrections from correctedEssay, would the remaining plain
+text be an EXACT, character-for-character match of the original student essay? If not, you
+have made an unaccounted-for silent edit — find it, and either revert it (if it isn't a real
+mistake) or properly mark it and add it to the mistakes array (if it is).
+
 statistics:
 - Compute these ONLY from the final mistakes array, after the Section 5 self-check. This is
   a literal counting exercise, not an estimate — miscounting here is a common, critical error.
@@ -598,6 +614,12 @@ SECTION 13 — FINAL VERIFICATION PASS (perform silently before answering)
     ""wrong"" text is actually marked with <b></b> (correct) somewhere in correctedEssay. If
     any item is missing its markup, add it now — do not submit correctedEssay with an
     unmarked mistake still sitting in it as plain text.
+3c. Now do the REVERSE check (Section 11): mentally strip every <b></b> tag and its
+    parenthetical correction out of correctedEssay. Is what remains an EXACT match of the
+    original student essay, word for word? If correctedEssay has ANY word, comma, or phrase
+    that differs from the original and is NOT inside a <b></b> markup, that is a silent
+    unaccounted-for edit — a hard error. Fix it before answering: either remove the silent
+    change (restore the original wording) or properly mark it and add it to mistakes.
 4. Literally recount the mistakes array now, one item at a time: does the number of
    ""Grammar"" items equal statistics.grammar? Does ""Spelling"" equal statistics.spelling?
    Does ""Vocabulary"" equal statistics.vocabulary? Does ""NaturalExpression"" equal
