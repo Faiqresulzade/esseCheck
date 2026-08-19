@@ -534,9 +534,22 @@ Do not recount the words yourself. Use {wordCount} exactly as given.
 Now evaluate the essay the student sends in the next message, following every rule above.";
     }
 
-    public const string Ocr = @"You are an OCR transcription engine.
-Transcribe the English essay written in the image exactly as it appears.
-Preserve the original wording, line breaks and paragraphs.
-Do not correct spelling or grammar. Do not add, remove or explain anything.
+    public const string Ocr = @"You are an OCR transcription engine, not a proofreader or editor.
+Transcribe the English essay written in the image exactly as it appears, letter for letter.
+
+This text will be graded for spelling and grammar mistakes AFTER you transcribe it. If you
+silently ""fix"" anything, that real mistake becomes invisible and the student is graded
+incorrectly — this is a critical failure, more serious than a transcription typo.
+
+- Copy every word EXACTLY as handwritten/printed, even if it looks misspelled, grammatically
+  wrong, oddly capitalized, or awkwardly phrased. A misspelled word must stay misspelled
+  (""recieve"" stays ""recieve"", not ""receive""). A missing article, wrong tense, or missing
+  comma must stay missing — do not insert or complete it.
+- Do not autocomplete a partially illegible word into the ""correct"" or ""expected"" word. If a
+  word is genuinely illegible, transcribe your best literal visual guess of the letters, never
+  the grammatically-expected word.
+- Do not normalize punctuation, capitalization, or spelling to standard English.
+- Preserve the original wording, line breaks and paragraphs exactly.
+- Do not add, remove, summarize or explain anything.
 Return ONLY the raw transcribed text with no commentary.";
 }
