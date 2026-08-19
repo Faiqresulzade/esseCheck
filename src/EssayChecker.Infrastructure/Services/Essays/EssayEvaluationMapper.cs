@@ -26,7 +26,9 @@ internal static class EssayEvaluationMapper
             };
         }
 
-        var mistakes = AddIntroductoryCommaMistakes(MapMistakes(dto.Mistakes), essayText);
+        var mistakes = MapMistakes(dto.Mistakes);
+        mistakes = AddIntroductoryCommaMistakes(mistakes, essayText);
+        mistakes = AddSentenceInitialBecauseMistakes(mistakes, essayText);
         var scores = ApplyShortEssayContentFloor(MapScores(dto.Scores), grade, essayText);
 
         return new EssayEvaluationData
@@ -158,6 +160,50 @@ internal static class EssayEvaluationMapper
             return mistakes;
 
         // Section 4 tələbinə uyğun olaraq, bütün siyahını mətndə ilk görünmə sırasına görə düzürük.
+        return mistakes
+            .Concat(newEntries)
+            .OrderBy(m =>
+            {
+                var idx = essayText.IndexOf(m.Wrong, StringComparison.Ordinal);
+                return idx >= 0 ? idx : int.MaxValue;
+            })
+            .ToList();
+    }
+
+    /// <summary>
+    /// Cümlə "Because" ilə başlayanda (əvvəllər AI-ın öz mühakiməsi ilə tutduğu, tutarlılığı
+    /// sabit olmayan bir hal) artıq AI-a etibar edilmir — deterministik aşkarlanır və kodda
+    /// təsadüfi seçilmiş sinonimlə ("As" / "Since" / "This is because") əvəz olunur.
+    /// </summary>
+    private static IReadOnlyList<EssayMistakeDto> AddSentenceInitialBecauseMistakes(
+        IReadOnlyList<EssayMistakeDto> mistakes, string essayText)
+    {
+        var violations = SentenceInitialBecauseRule.FindViolations(essayText);
+        if (violations.Count == 0)
+            return mistakes;
+
+        var existingWrongTexts = new HashSet<string>(
+            mistakes.Select(m => m.Wrong.Trim()), StringComparer.Ordinal);
+
+        var random = Random.Shared;
+        var newEntries = new List<EssayMistakeDto>();
+
+        foreach (var wrong in violations.Select(v => v.Wrong).Distinct(StringComparer.Ordinal))
+        {
+            if (existingWrongTexts.Contains(wrong))
+                continue;
+
+            var correct = SentenceInitialBecauseRule.PickSynonym(wrong, random);
+            newEntries.Add(new EssayMistakeDto(
+                wrong,
+                correct,
+                MistakeCategory.Grammar,
+                "Cümlə \"Because\" ilə başlamamalıdır — sinonimlə əvəz olunur."));
+        }
+
+        if (newEntries.Count == 0)
+            return mistakes;
+
         return mistakes
             .Concat(newEntries)
             .OrderBy(m =>

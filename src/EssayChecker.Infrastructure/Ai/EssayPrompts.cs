@@ -166,6 +166,11 @@ opinion, ...) is NOT your job — it is detected and fixed automatically outside
 not report it, do not mark it in correctedEssay, and do not worry if you see such a phrase
 unmarked at the start of a sentence in the essay — that is expected and correct.
 
+Note: a sentence starting with ""Because"" (e.g. ""Because I like it, I bought it."") is ALSO NOT
+your job for the same reason — it is detected and replaced automatically outside your output.
+Do not report it, do not mark it, do not touch it. (""Because of ..."" is a different, always
+correct construction and is never touched by this rule or by you.)
+
 REPORTABLE PUNCTUATION CASES — all three use category ""Grammar"":
 
 P2 — Run-on sentence / comma splice.

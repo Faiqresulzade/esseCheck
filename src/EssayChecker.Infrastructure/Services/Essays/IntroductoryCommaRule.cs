@@ -34,14 +34,8 @@ internal static class IntroductoryCommaRule
         if (string.IsNullOrEmpty(essayText))
             return violations;
 
-        // Eyni indeks bir neçə sərhəd səbəbindən (məs. ". " sonra "\n") təkrar yarana bilər.
-        var seenIndexes = new HashSet<int>();
-
-        foreach (var sentenceStart in FindSentenceStartIndexes(essayText))
+        foreach (var sentenceStart in SentenceBoundaries.FindStartIndexes(essayText))
         {
-            if (!seenIndexes.Add(sentenceStart))
-                continue;
-
             var phrase = MatchPhraseAt(essayText, sentenceStart);
             if (phrase is null)
                 continue;
@@ -80,29 +74,4 @@ internal static class IntroductoryCommaRule
         return null;
     }
 
-    /// <summary>Mətnin əvvəli və hər cümlə/sətir sonundan dərhal sonra gələn indekslər.</summary>
-    private static IEnumerable<int> FindSentenceStartIndexes(string text)
-    {
-        yield return SkipWhitespace(text, 0);
-
-        for (var i = 0; i < text.Length; i++)
-        {
-            if (text[i] is '.' or '!' or '?' or '\n')
-            {
-                var j = i + 1;
-                while (j < text.Length && text[j] is '.' or '!' or '?' or '"' or '\'')
-                    j++;
-
-                yield return SkipWhitespace(text, j);
-            }
-        }
-    }
-
-    private static int SkipWhitespace(string text, int index)
-    {
-        while (index < text.Length && char.IsWhiteSpace(text[index]))
-            index++;
-
-        return index;
-    }
 }
