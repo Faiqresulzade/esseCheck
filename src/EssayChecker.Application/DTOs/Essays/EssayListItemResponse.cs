@@ -8,4 +8,8 @@ public sealed record EssayListItemResponse(
     DateTime CreatedAt,
     int WordCount,
     double TotalScore,
-    GradeLevel Grade);
+    GradeLevel Grade,
+    /// <summary>Esse bir şagird üçün yoxlanılıbsa onun id-si, əks halda null.</summary>
+    int? StudentId,
+    /// <summary>Şagirdin adı — siyahıda göstərmək üçün. Şagird silinsə də ad qalır.</summary>
+    string? StudentName);

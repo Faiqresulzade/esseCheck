@@ -15,4 +15,6 @@ public sealed record EssayDetailResponse(
     EssayStatisticsDto Statistics,
     IReadOnlyList<EssayMistakeDto> Mistakes,
     EssayScoresDto Scores,
-    TeacherFeedbackDto Feedback);
+    TeacherFeedbackDto Feedback,
+    int? StudentId = null,
+    string? StudentName = null);

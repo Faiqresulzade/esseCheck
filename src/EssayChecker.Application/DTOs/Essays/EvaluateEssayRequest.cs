@@ -20,10 +20,17 @@ public sealed class EvaluateEssayRequest
     /// <summary>
     /// Hansı sinif üçün qiymətləndirilir (9 və ya 11) — DİM meyarları (minimum söz sayı və s.)
     /// sinifə görə fərqləndiyi üçün AI-a göndərilən promt bu dəyərə görə seçilir.
+    /// Boş buraxıla bilər YALNIZ <see cref="StudentId"/> göndərilibsə və həmin şagirdin kartında
+    /// sinif təyin olunubsa — o halda şagirdin sinfi işlədilir.
     /// </summary>
-    [Required(ErrorMessage = "Sinif seçilməlidir.")]
     [EnumDataType(typeof(GradeLevel), ErrorMessage = "Sinif dəyəri etibarsızdır.")]
-    public GradeLevel Grade { get; set; }
+    public GradeLevel? Grade { get; set; }
+
+    /// <summary>
+    /// Esse hansı şagird üçün yoxlanılır (opsional). Verilməsə esse müəllimin öz essesi kimi
+    /// yazılır. Başqa müəllimin şagirdinin id-si göndərilsə sorğu rədd olunur.
+    /// </summary>
+    public int? StudentId { get; set; }
 
     /// <summary>
     /// Opsional tapşırıq mövzusu (məs. "Should students wear school uniforms?"). Verilibsə,

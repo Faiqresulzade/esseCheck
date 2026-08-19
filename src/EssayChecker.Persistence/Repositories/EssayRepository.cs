@@ -31,6 +31,8 @@ public sealed class EssayRepository : IEssayRepository
     public async Task<EssayHistoryResponse> GetHistoryAsync(
         int userId,
         string? search,
+        int? studentId,
+        int? groupId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -41,6 +43,17 @@ public sealed class EssayRepository : IEssayRepository
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(e => e.Title.Contains(search));
+
+        if (studentId is not null)
+            query = query.Where(e => e.StudentId == studentId);
+
+        // Qrup filtri: silinmiş şagirdlər də daxildir — qrup silinsə belə keçmiş esselər
+        // tarixçədə tapıla bilməlidir.
+        if (groupId is not null)
+        {
+            query = query.Where(e => _db.Students
+                .Any(s => s.Id == e.StudentId && s.GroupId == groupId && s.Group.TeacherId == userId));
+        }
 
         // Say və ortalama filtrlənmiş TAM dəstə üzərindən hesablanır, Items isə yalnız cari səhifə.
         var totalCount = await query.CountAsync(cancellationToken);
@@ -58,7 +71,12 @@ public sealed class EssayRepository : IEssayRepository
                 e.CreatedAt,
                 e.WordCount,
                 e.TotalScore,
-                e.Grade))
+                e.Grade,
+                e.StudentId,
+                _db.Students
+                    .Where(s => s.Id == e.StudentId)
+                    .Select(s => s.FullName)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);

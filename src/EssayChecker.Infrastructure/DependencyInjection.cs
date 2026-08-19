@@ -6,6 +6,7 @@ using EssayChecker.Infrastructure.GooglePlay;
 using EssayChecker.Infrastructure.Services.Essays;
 using EssayChecker.Infrastructure.Services.Logs;
 using EssayChecker.Infrastructure.Services.Subscriptions;
+using EssayChecker.Infrastructure.Services.Teaching;
 using EssayChecker.Infrastructure.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -55,6 +56,9 @@ public static class DependencyInjection
         services.AddScoped<IEssayEvaluator, OpenRouterEssayEvaluator>();
         services.AddScoped<IOcrService, OpenRouterOcrService>();
         services.AddScoped<IEssayService, EssayService>();
+
+        // Qrup / şagird (müəllim rejimi) — plandan asılı deyil, bax TeachingService.
+        services.AddScoped<ITeachingService, TeachingService>();
 
         // Subscription / Daily limit
         services.AddScoped<ISubscriptionService, SubscriptionService>();

@@ -9,6 +9,13 @@ public class Essay
 
     public int UserId { get; set; }
 
+    /// <summary>
+    /// Esse hansı şagird üçün yoxlanılıb (opsional). null = müəllim şagird seçməyib, ya da
+    /// esse adi istifadəçinin öz essesidir. Şagird sonradan silinsə belə (soft-delete) bu
+    /// bağlantı qırılmır — inkişaf tarixçəsi qorunur.
+    /// </summary>
+    public int? StudentId { get; set; }
+
     public string Title { get; set; } = null!;
 
     /// <summary>İstifadəçinin göndərdiyi (və ya şəkildən oxunub düzəldilmiş) orijinal mətn.</summary>

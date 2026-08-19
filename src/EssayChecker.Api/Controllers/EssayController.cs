@@ -14,11 +14,16 @@ public class EssayController : ApiControllerBase
 {
     private readonly IEssayService _essayService;
     private readonly IUsageLimitService _usageLimitService;
+    private readonly ITeachingService _teachingService;
 
-    public EssayController(IEssayService essayService, IUsageLimitService usageLimitService)
+    public EssayController(
+        IEssayService essayService,
+        IUsageLimitService usageLimitService,
+        ITeachingService teachingService)
     {
         _essayService = essayService;
         _usageLimitService = usageLimitService;
+        _teachingService = teachingService;
     }
 
     /// <summary>
@@ -28,7 +33,16 @@ public class EssayController : ApiControllerBase
     [HttpPost("evaluate")]
     public async Task<IActionResult> Evaluate([FromBody] EvaluateEssayRequest request, CancellationToken cancellationToken)
     {
-        if (request.Grade == GradeLevel.Grade9)
+        // Şagird seçilibsə sahibliyi yoxlanır; sinif sorğuda yoxdursa şagirdin kartından götürülür.
+        var studentGrade = await ResolveStudentGradeAsync(request.StudentId, cancellationToken);
+        if (studentGrade.Denied is not null)
+            return studentGrade.Denied;
+
+        var grade = request.Grade ?? studentGrade.Grade;
+        if (grade is null)
+            return BadRequest(new { message = "Sinif seçilməlidir." });
+
+        if (grade == GradeLevel.Grade9)
         {
             return BadRequest(new
             {
@@ -40,7 +54,7 @@ public class EssayController : ApiControllerBase
         if (denied is not null)
             return denied;
 
-        var result = await _essayService.EvaluateAsync(UserId, request, cancellationToken);
+        var result = await _essayService.EvaluateAsync(UserId, request, grade.Value, cancellationToken);
         if (!result.Success)
             return UnprocessableEntity(new { message = result.Error ?? "Göndərilən mətn esse deyil." });
 
@@ -82,6 +96,7 @@ public class EssayController : ApiControllerBase
     public async Task<IActionResult> EvaluateGrade9WithImages(
         [FromForm] string text,
         [FromForm] string? title,
+        [FromForm] int? studentId,
         IFormFile? promptImage1,
         IFormFile? promptImage2,
         IFormFile? promptImage3,
@@ -89,6 +104,11 @@ public class EssayController : ApiControllerBase
     {
         if (string.IsNullOrWhiteSpace(text))
             return BadRequest(new { message = "Esse mətni boş ola bilməz." });
+
+        // Sinif burada həmişə Grade9-dur, ona görə yalnız şagirdin sahibliyi yoxlanılır.
+        var student = await ResolveStudentGradeAsync(studentId, cancellationToken);
+        if (student.Denied is not null)
+            return student.Denied;
 
         var files = new[] { promptImage1, promptImage2, promptImage3 }
             .Where(f => f is not null && f.Length > 0)
@@ -106,7 +126,7 @@ public class EssayController : ApiControllerBase
 
         var promptImages = await ToPromptImagesAsync(files, cancellationToken);
 
-        var result = await _essayService.EvaluateGrade9WithImagesAsync(UserId, text, title, promptImages, cancellationToken);
+        var result = await _essayService.EvaluateGrade9WithImagesAsync(UserId, text, title, studentId, promptImages, cancellationToken);
         if (!result.Success)
             return UnprocessableEntity(new { message = result.Error ?? "Göndərilən mətn esse deyil." });
 
@@ -133,6 +153,23 @@ public class EssayController : ApiControllerBase
             : StatusCode(StatusCodes.Status429TooManyRequests, new { message = decision.Reason });
     }
 
+    /// <summary>
+    /// Şagird göndərilibsə onun bu müəllimə aid və silinməmiş olduğunu yoxlayır. Başqasının
+    /// şagirdi (və ya mövcud olmayan id) "tapılmadı" kimi rədd edilir — mövcudluq faktı sızmır.
+    /// Şagird verilməyibsə heç bir sorğu getmir və heç nə rədd edilmir (şagird seçimi opsionaldır).
+    /// </summary>
+    private async Task<(IActionResult? Denied, GradeLevel? Grade)> ResolveStudentGradeAsync(
+        int? studentId, CancellationToken cancellationToken)
+    {
+        if (studentId is null)
+            return (null, null);
+
+        var student = await _teachingService.GetStudentAsync(UserId, studentId.Value, cancellationToken);
+        return student is null
+            ? (BadRequest(new { message = "Şagird tapılmadı." }), null)
+            : (null, student.Grade);
+    }
+
     private static bool IsImage(IFormFile file) =>
         !string.IsNullOrEmpty(file.ContentType) && file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
 
@@ -149,10 +186,16 @@ public class EssayController : ApiControllerBase
         return promptImages;
     }
 
-    /// <summary>Tarixçə siyahısı (səhifələnmiş, axtarış opsional). page ən azı 1, pageSize 1–100 aralığında.</summary>
+    /// <summary>
+    /// Tarixçə siyahısı (səhifələnmiş, axtarış opsional). page ən azı 1, pageSize 1–100 aralığında.
+    /// Öz esseləri və şagird esseləri eyni siyahıdadır; hər sətirdə (varsa) şagirdin adı gəlir.
+    /// <paramref name="studentId"/> / <paramref name="groupId"/> ilə daraldıla bilər.
+    /// </summary>
     [HttpGet("history")]
     public async Task<IActionResult> History(
         [FromQuery] string? search,
+        [FromQuery] int? studentId,
+        [FromQuery] int? groupId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
@@ -160,7 +203,7 @@ public class EssayController : ApiControllerBase
         page = page < 1 ? 1 : page;
         pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
 
-        var history = await _essayService.GetHistoryAsync(UserId, search, page, pageSize, cancellationToken);
+        var history = await _essayService.GetHistoryAsync(UserId, search, studentId, groupId, page, pageSize, cancellationToken);
         return Ok(history);
     }
 

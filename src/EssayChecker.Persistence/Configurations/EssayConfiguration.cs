@@ -36,6 +36,17 @@ public class EssayConfiguration : IEntityTypeConfiguration<Essay>
 
         builder.HasIndex(e => e.UserId);
 
+        // Şagird silinsə (hard-delete) belə esse itməməlidir — SetNull. Praktikada şagird
+        // soft-delete olunur, yəni bu yol yalnız qrup/şagird bazadan tam silinəndə işə düşür.
+        builder.HasOne<Domain.Entities.Teaching.Student>()
+            .WithMany()
+            .HasForeignKey(e => e.StudentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // "Bu şagirdin esseləri" sorğusu (tarixçə filtri + gələcək inkişaf analitikası).
+        builder.HasIndex(e => e.StudentId)
+            .HasFilter("\"StudentId\" IS NOT NULL");
+
         // Statistika və ballar — sətir daxilində sütunlar (owned).
         builder.OwnsOne(e => e.Statistics);
         builder.OwnsOne(e => e.Scores, s =>

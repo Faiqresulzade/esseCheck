@@ -11,27 +11,35 @@ public sealed class EssayService : IEssayService
     private readonly IEssayEvaluator _evaluator;
     private readonly IOcrService _ocrService;
     private readonly IEssayRepository _repository;
+    private readonly ITeachingRepository _teachingRepository;
 
     public EssayService(
         IEssayEvaluator evaluator,
         IOcrService ocrService,
-        IEssayRepository repository)
+        IEssayRepository repository,
+        ITeachingRepository teachingRepository)
     {
         _evaluator = evaluator;
         _ocrService = ocrService;
         _repository = repository;
+        _teachingRepository = teachingRepository;
     }
 
+    /// <param name="grade">
+    /// Controller tərəfindən artıq həll edilmiş sinif: sorğudakı dəyər, o yoxdursa şagird
+    /// kartındakı dəyər. Hər ikisi boş olduqda controller sorğunu buraxmır.
+    /// </param>
     public async Task<EvaluateEssayResult> EvaluateAsync(
         int userId,
         EvaluateEssayRequest request,
+        GradeLevel grade,
         CancellationToken cancellationToken = default)
     {
         var data = await _evaluator.EvaluateAsync(
-            request.Text, request.Grade, request.Topic, promptImages: null, cancellationToken);
+            request.Text, grade, request.Topic, promptImages: null, cancellationToken);
 
         return await PersistAndMapAsync(
-            userId, data, request.Text, request.Title, request.Grade, request.Source, cancellationToken);
+            userId, data, request.Text, request.Title, request.StudentId, grade, request.Source, cancellationToken);
     }
 
     /// <summary>
@@ -43,6 +51,7 @@ public sealed class EssayService : IEssayService
         int userId,
         string text,
         string? title,
+        int? studentId,
         IReadOnlyList<PromptImage> promptImages,
         CancellationToken cancellationToken = default)
     {
@@ -50,7 +59,7 @@ public sealed class EssayService : IEssayService
             text, GradeLevel.Grade9, topic: null, promptImages, cancellationToken);
 
         return await PersistAndMapAsync(
-            userId, data, text, title, GradeLevel.Grade9, EssayInputSource.Text, cancellationToken);
+            userId, data, text, title, studentId, GradeLevel.Grade9, EssayInputSource.Text, cancellationToken);
     }
 
     private async Task<EvaluateEssayResult> PersistAndMapAsync(
@@ -58,6 +67,7 @@ public sealed class EssayService : IEssayService
         EssayEvaluationData data,
         string originalText,
         string? title,
+        int? studentId,
         GradeLevel grade,
         EssayInputSource source,
         CancellationToken cancellationToken)
@@ -68,6 +78,7 @@ public sealed class EssayService : IEssayService
         var essay = new Essay
         {
             UserId = userId,
+            StudentId = studentId,
             Title = ResolveTitle(title, originalText),
             OriginalText = originalText,
             CorrectedEssay = data.CorrectedEssay,
@@ -116,7 +127,7 @@ public sealed class EssayService : IEssayService
 
         await _repository.AddAsync(essay, cancellationToken);
 
-        return new EvaluateEssayResult(true, null, MapToDetail(essay));
+        return new EvaluateEssayResult(true, null, await MapToDetailAsync(essay, cancellationToken));
     }
 
     public async Task<OcrResponse> ReadImageAsync(
@@ -131,10 +142,12 @@ public sealed class EssayService : IEssayService
     public Task<EssayHistoryResponse> GetHistoryAsync(
         int userId,
         string? search,
+        int? studentId,
+        int? groupId,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default) =>
-        _repository.GetHistoryAsync(userId, search, page, pageSize, cancellationToken);
+        _repository.GetHistoryAsync(userId, search, studentId, groupId, page, pageSize, cancellationToken);
 
     public async Task<EssayDetailResponse?> GetByIdAsync(
         int userId,
@@ -142,7 +155,7 @@ public sealed class EssayService : IEssayService
         CancellationToken cancellationToken = default)
     {
         var essay = await _repository.GetByIdAsync(userId, essayId, cancellationToken);
-        return essay is null ? null : MapToDetail(essay);
+        return essay is null ? null : await MapToDetailAsync(essay, cancellationToken);
     }
 
     public Task<bool> DeleteAsync(
@@ -154,7 +167,20 @@ public sealed class EssayService : IEssayService
     public Task<int> DeleteAllAsync(int userId, CancellationToken cancellationToken = default) =>
         _repository.DeleteAllAsync(userId, cancellationToken);
 
-    private static EssayDetailResponse MapToDetail(Essay e) => new(
+    /// <summary>
+    /// Şagird adı ayrıca oxunur (silinmiş şagird üçün də) — esse detalında "kimin essesi"
+    /// göstərilməlidir. Şagird bağlantısı yoxdursa əlavə sorğu getmir.
+    /// </summary>
+    private async Task<EssayDetailResponse> MapToDetailAsync(Essay e, CancellationToken cancellationToken)
+    {
+        var studentName = e.StudentId is null
+            ? null
+            : await _teachingRepository.GetStudentNameAsync(e.StudentId.Value, cancellationToken);
+
+        return MapToDetail(e, studentName);
+    }
+
+    private static EssayDetailResponse MapToDetail(Essay e, string? studentName) => new(
         e.Id,
         e.Title,
         e.CreatedAt,
@@ -186,7 +212,9 @@ public sealed class EssayService : IEssayService
         new TeacherFeedbackDto(
             e.Feedback.Strengths,
             e.Feedback.Weaknesses,
-            e.Feedback.Recommendations));
+            e.Feedback.Recommendations),
+        e.StudentId,
+        studentName);
 
     private static string ResolveTitle(string? title, string text)
     {

@@ -132,6 +132,28 @@ essay-specific values out of the constant.
 it does **not** persist or evaluate; the client is expected to review/edit the OCR text, then call
 `/evaluate` separately with `source: "Image"`.
 
+### Teacher mode: groups and students
+
+A user can keep a roster: `StudentGroup` (owned by `TeacherId`) → `Student` (exactly one group).
+Students are **not app users** — no login, no email, no quota of their own. The teacher submits every
+essay and the teacher's quota is charged. There is deliberately **no teacher role and no plan gate**:
+anyone can create groups; the paid plan only raises the daily essay limit. Abuse is bounded by
+`TeachingService`'s caps (50 groups/teacher, 200 students/group).
+
+`Essay.StudentId` is nullable — selecting a student is optional, and essays predating this feature
+have none. On evaluate, the controller resolves the grade as `request.Grade ?? student.Grade`, so a
+student card with a grade lets the client omit it; if both are missing the request is rejected with
+400. `EvaluateEssayRequest.Grade` is therefore nullable now, but existing clients that always send it
+are unaffected.
+
+Ownership is checked on every path by walking `Student → Group → TeacherId`; a foreign or missing id
+returns "not found" rather than "forbidden" so existence doesn't leak. Deletes are **soft** for both
+groups and students (deleting a group soft-deletes its students), and essays are never touched — the
+`StudentId` link survives so past results and future progress analytics stay intact. History is one
+list carrying `studentId`/`studentName`, filterable by `studentId` or `groupId`.
+
+Progress/weakness analytics is not built yet; the model is shaped for it.
+
 ### Error response conventions (see POSTMAN_DOCS.md §1.6 for full detail)
 
 - Validation/logic errors: `{ "message": "..." }`, usually `400`.

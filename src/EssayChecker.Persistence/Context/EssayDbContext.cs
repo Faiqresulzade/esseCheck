@@ -2,6 +2,7 @@
 using EssayChecker.Domain.Entities.Logs;
 using EssayChecker.Domain.Entities.Marketing;
 using EssayChecker.Domain.Entities.Subscriptions;
+using EssayChecker.Domain.Entities.Teaching;
 using EssayChecker.Domain.Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -31,6 +32,10 @@ public class EssayDbContext
     public DbSet<RequestLog> RequestLogs => Set<RequestLog>();
 
     public DbSet<EnglishTeacher> EnglishTeachers => Set<EnglishTeacher>();
+
+    public DbSet<StudentGroup> StudentGroups => Set<StudentGroup>();
+
+    public DbSet<Student> Students => Set<Student>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
