@@ -152,7 +152,29 @@ groups and students (deleting a group soft-deletes its students), and essays are
 `StudentId` link survives so past results and future progress analytics stay intact. History is one
 list carrying `studentId`/`studentName`, filterable by `studentId` or `groupId`.
 
-Progress/weakness analytics is not built yet; the model is shaped for it.
+### Analytics (student progress / weaknesses)
+
+`GET /api/analytics/overview` (whole account), `/analytics/groups/{id}`, `/analytics/students/{id}`.
+Everything is derived from rows that already exist — **no extra AI call**, so these endpoints don't
+touch the daily quota and cost nothing.
+
+- `AnalyticsRepository` only fetches flat rows (`EssayAnalyticsRow`) — scores and mistake counts are
+  plain columns (`Scores`/`Statistics` are `OwnsOne`, not JSON), so this is a cheap projection that
+  deliberately excludes `OriginalText`/`CorrectedEssay`.
+- All the arithmetic lives in `AnalyticsAggregator` (pure functions, no DB) so the same essay can't
+  produce different numbers on the student, group and overview screens.
+- **The four directions have different maxima** (`content` is 2.0, the rest 1.0). Never rank them by
+  raw score — `DirectionStat.Percent` (score ÷ max) is what "weakest direction" and every chart must
+  use.
+- "Weaknesses" / "recommendations" are **not regenerated**; they are the `TeacherFeedback` lists the
+  grading call already wrote, taken from the last 10 essays and grouped by normalised text
+  (whitespace + case + trailing punctuation). Grouping is textual only — the AI wording varies, so
+  treat `count` as a hint, not a measurement.
+- `MistakeSummary.PerHundredWords` is the length-independent metric; raw totals favour short essays.
+- `HasEnoughData` = at least 2 essays. Data is still returned below that (zeros/nulls), the flag only
+  tells the client not to draw a trend line.
+- Group analytics excludes soft-deleted students so the numbers match the visible roster — note this
+  differs from `/essay/history?groupId=`, which deliberately still finds their essays.
 
 ### Error response conventions (see POSTMAN_DOCS.md §1.6 for full detail)
 
@@ -185,9 +207,9 @@ UTC midnight.
 - `POSTMAN_DOCS.md` — full endpoint reference with request/response examples for every route (23
   requests across Auth/Account/Essay/Subscription); `EssayCheck.postman_collection.json` is the
   importable collection.
-- `FRONTEND_UNIFIED_PLAN_LIMITS.md`, `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md` — notes written for
-  frontend/mobile-side implementation of specific features (plan limit display, natural-expression
-  scoring UI).
+- `FRONTEND_UNIFIED_PLAN_LIMITS.md`, `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md`,
+  `FRONTEND_TEACHER_GROUPS.md` — notes written for frontend/mobile-side implementation of specific
+  features (plan limit display, natural-expression scoring UI, teacher groups/students + analytics).
 
 ## Notes
 

@@ -3,6 +3,7 @@ using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure.Ai;
 using EssayChecker.Infrastructure.GooglePlay;
+using EssayChecker.Infrastructure.Services.Analytics;
 using EssayChecker.Infrastructure.Services.Essays;
 using EssayChecker.Infrastructure.Services.Logs;
 using EssayChecker.Infrastructure.Services.Subscriptions;
@@ -59,6 +60,9 @@ public static class DependencyInjection
 
         // Qrup / şagird (müəllim rejimi) — plandan asılı deyil, bax TeachingService.
         services.AddScoped<ITeachingService, TeachingService>();
+
+        // Analitika — mövcud esse nəticələrindən hesablanır, AI çağırışı yoxdur.
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         // Subscription / Daily limit
         services.AddScoped<ISubscriptionService, SubscriptionService>();
