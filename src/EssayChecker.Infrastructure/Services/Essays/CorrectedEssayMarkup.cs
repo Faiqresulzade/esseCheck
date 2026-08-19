@@ -70,41 +70,38 @@ internal static class CorrectedEssayMarkup
     private static string MarkAllOccurrences(string text, EssayMistakeDto mistake)
     {
         var searchFrom = 0;
+        var markedAnyWrongOccurrence = false;
 
         for (var inserted = 0; inserted < MaxMarkupInsertionsPerMistake; inserted++)
         {
             var index = FindUnmarkedOccurrence(text, mistake.Wrong, searchFrom);
-            int length;
+            if (index < 0)
+                break; // "wrong"un işarələnməmiş başqa nüsxəsi qalmayıb.
 
-            if (index >= 0)
+            // Bu konkret nüsxə artıq "correct" formasındadırmı (məs. "wrong"="However",
+            // "correct"="However," ikən mətndə eyni yerdə tələbə özü vergüllə yazıb, YA DA eyni
+            // ifadənin başqa bir nüsxəsi artıq işarələnib)? Belədirsə, TOXUNMURUQ — bu nüsxə artıq
+            // düzgündür, sadəcə keçib növbəti nüsxəni axtarırıq. Bu, "However" kimi bir ifadənin
+            // mətndə HƏM düzgün (vergüllü), HƏM səhv (vergülsüz) nüsxəsi qarışıq olduğu halda
+            // düzgün olanın yanlışlıqla yenidən işarələnib təkrar vergül almasının qarşısını alır.
+            if (IsCorrectedTextAt(text, index, mistake.Correct, mistake.Wrong))
             {
-                // Model düzəlişi işarələmədən, hazır halda yazmış ola bilər (məs. orijinalda
-                // "In my opinion" ikən mətndə "In my opinion,"). Belə halda "wrong" "correct"-in
-                // prefiksi olduğu üçün axtarış məhz düzəldilmiş mətnin üstünə düşür — yalnız
-                // "wrong" qədərini əvəz etsək, düzəlişin quyruğu (vergül) mətndə qalıb
-                // təkrarlanardı: "(In my opinion,), AI". Ona görə tam "correct"-i əvəz edirik.
-                length = IsCorrectedTextAt(text, index, mistake.Correct, mistake.Wrong)
-                    ? mistake.Correct.Length
-                    : mistake.Wrong.Length;
-            }
-            else
-            {
-                // "wrong" heç tapılmadı — model onu bütövlüklə "correct" ilə əvəz edib.
-                if (string.IsNullOrEmpty(mistake.Correct))
-                    return text;
-
-                index = FindUnmarkedOccurrence(text, mistake.Correct, searchFrom);
-                if (index < 0)
-                    return text; // Nə biri, nə digəri tapılmadı — statistics/mistakes yenə düzgündür.
-
-                length = mistake.Correct.Length;
+                searchFrom = index + mistake.Wrong.Length;
+                continue;
             }
 
-            text = InsertMarkupAt(text, index, length, mistake);
+            text = InsertMarkupAt(text, index, mistake.Wrong.Length, mistake);
             searchFrom = index + MarkupLength(mistake);
+            markedAnyWrongOccurrence = true;
         }
 
-        return text;
+        if (markedAnyWrongOccurrence || string.IsNullOrEmpty(mistake.Correct))
+            return text;
+
+        // "wrong"un HEÇ bir səhv (yəni artıq "correct"-ə çevrilməmiş) nüsxəsi tapılmadı — model
+        // böyük ehtimalla düzəlişi sükutla tətbiq edib, "wrong"u bütövlüklə "correct" ilə əvəz edib.
+        var correctIndex = FindUnmarkedOccurrence(text, mistake.Correct, 0);
+        return correctIndex < 0 ? text : InsertMarkupAt(text, correctIndex, mistake.Correct.Length, mistake);
     }
 
     /// <summary>

@@ -26,7 +26,7 @@ internal static class EssayEvaluationMapper
             };
         }
 
-        var mistakes = MapMistakes(dto.Mistakes);
+        var mistakes = AddIntroductoryCommaMistakes(MapMistakes(dto.Mistakes), essayText);
         var scores = ApplyShortEssayContentFloor(MapScores(dto.Scores), grade, essayText);
 
         return new EssayEvaluationData
@@ -126,6 +126,46 @@ internal static class EssayEvaluationMapper
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Cümlə əvvəlindəki keçid ifadəsindən sonra vergül qaydası (əvvəllər prompt-un P1 qaydası)
+    /// AI-a etibar edilmədən, birbaşa orijinal mətndə deterministik yoxlanılır. AI bu qaydanı
+    /// mistakes massivinə əlavə etməyi tez-tez unudurdu — indi bu, kodun öz məsuliyyətidir.
+    /// </summary>
+    private static IReadOnlyList<EssayMistakeDto> AddIntroductoryCommaMistakes(
+        IReadOnlyList<EssayMistakeDto> mistakes, string essayText)
+    {
+        var violations = IntroductoryCommaRule.FindViolations(essayText);
+        if (violations.Count == 0)
+            return mistakes;
+
+        var existingWrongTexts = new HashSet<string>(
+            mistakes.Select(m => m.Wrong.Trim()), StringComparer.Ordinal);
+
+        var newEntries = violations
+            .Select(v => v.Phrase)
+            .Distinct(StringComparer.Ordinal)
+            .Where(phrase => !existingWrongTexts.Contains(phrase))
+            .Select(phrase => new EssayMistakeDto(
+                phrase,
+                phrase + ",",
+                MistakeCategory.Grammar,
+                "Cümlə əvvəlindəki keçid ifadəsindən sonra vergül tələb olunur."))
+            .ToList();
+
+        if (newEntries.Count == 0)
+            return mistakes;
+
+        // Section 4 tələbinə uyğun olaraq, bütün siyahını mətndə ilk görünmə sırasına görə düzürük.
+        return mistakes
+            .Concat(newEntries)
+            .OrderBy(m =>
+            {
+                var idx = essayText.IndexOf(m.Wrong, StringComparison.Ordinal);
+                return idx >= 0 ? idx : int.MaxValue;
+            })
+            .ToList();
     }
 
     private static TeacherFeedbackDto MapFeedback(AiFeedback? f) =>

@@ -106,8 +106,8 @@ B1. REPEATED WORD OR PHRASE (category ""Vocabulary"")
       they, ...) — repeating these is completely normal English;
     - the essay's core topic word when no synonym preserves the meaning (e.g. ""uniform"" in an
       essay about school uniforms, ""language"" in an essay about learning languages).
-    - transitional/linking phrases already handled by P1 (However, For example, In conclusion,
-      ...) — those take the P1 comma correction and category ""Grammar"", never a synonym.
+    - transitional/linking phrases (However, For example, In conclusion, In my opinion, ...) —
+      never replace these with a synonym; the comma after them is handled automatically, not by you.
 
 B2. UNNATURAL PHRASING (category ""NaturalExpression"")
     Understandable but not how a native speaker would say it, e.g.
@@ -118,7 +118,7 @@ B2. UNNATURAL PHRASING (category ""NaturalExpression"")
 1. ""wrong"" and ""correct"", ignoring only leading/trailing whitespace, must NOT be identical.
    An identical pair is a hard error.
 2. They must NOT differ only in capitalization, only in spacing, or only in punctuation —
-   except the four punctuation cases P1-P4 in Section 5, which are always reportable.
+   except the three punctuation cases P2-P4 in Section 5, which are always reportable.
 3. For TYPE A only: could a native speaker name a concrete grammatical, spelling or lexical
    reason why the original is wrong? If not, drop it.
    For TYPE B: the replacement must be genuinely more natural or genuinely reduce repetition —
@@ -157,24 +157,16 @@ SECTION 5 — PUNCTUATION
 =====================================================================
 Punctuation belongs to the DİM ""grammar and language use"" direction (sub-criterion 3c), so it
 affects the grammar SCORE. But because student text often reaches you through transcription,
-only the four cases below may ever be listed as individual mistakes. All other punctuation
+only the three cases below may ever be listed as individual mistakes. All other punctuation
 problems: never list them, and never let them lower any score either (they may come from the
 transcription, not the student) — you may still mention them in teacherFeedback.
 
-REPORTABLE PUNCTUATION CASES — all four use category ""Grammar"":
+Note: a missing comma after a sentence-initial transitional phrase (However, For example, In my
+opinion, ...) is NOT your job — it is detected and fixed automatically outside your output. Do
+not report it, do not mark it in correctedEssay, and do not worry if you see such a phrase
+unmarked at the start of a sentence in the essay — that is expected and correct.
 
-P1 — Missing comma after a sentence-initial introductory element.
-   When a sentence opens with an element that comes BEFORE the main subject and verb, a comma
-   is required after it. This covers:
-   - transitional/conjunctive adverbs: However, Moreover, Furthermore, Therefore, Nevertheless,
-     Additionally, Also, Consequently, In addition, As a result, For example, In conclusion,
-     On the other hand, Firstly, Secondly, Finally
-   - time/frequency openers: Nowadays, Today, Recently, In the past
-   - viewpoint openers: In my opinion, In my view, Personally, To be honest
-   Examples: ""However I think"" -> ""However, I think"" · ""In my opinion AI will"" ->
-   ""In my opinion, AI will"" · ""Nowadays many people"" -> ""Nowadays, many people""
-   Do NOT apply this to a normal subject starting the sentence (""Many people use AI"" is
-   correct as-is — ""Many people"" is the subject, not an introductory element).
+REPORTABLE PUNCTUATION CASES — all three use category ""Grammar"":
 
 P2 — Run-on sentence / comma splice.
    Two independent clauses joined by a comma alone, or by nothing at all, where a full stop or
@@ -202,7 +194,7 @@ SECTION 6 — ALWAYS IGNORE (never a mistake, never lowers a score)
 These may come from transcription rather than from the student:
 - missing or extra spaces, double spaces, stray line breaks, indentation, formatting
 - a sentence beginning with a lowercase or uppercase letter; inconsistent capitalization
-- any punctuation other than the four cases P1-P4 in Section 5
+- any punctuation other than the three cases P2-P4 in Section 5
 - word count (reflected only through the Section 7 score caps)
 
 =====================================================================
@@ -228,13 +220,13 @@ SECTION 8 — CATEGORIES
   Capitalization is never a spelling mistake.
 - Grammar: tense, subject-verb agreement, articles, prepositions, singular/plural, auxiliaries,
   word order, broken sentence structure, sentence fragments, misused linking words (e.g. ""but""
-  where ""because"" is needed), and the four punctuation cases P1-P4.
+  where ""because"" is needed), and the three punctuation cases P2-P4.
 - Vocabulary: an objectively wrong word choice, plus the repeated-word replacements of rule B1.
 - NaturalExpression: understandable but unnatural phrasing (rule B2).
 
 If an item could fit more than one category, pick exactly one, by this priority:
   Spelling > Grammar > Vocabulary > NaturalExpression
-So: anything involving a P1-P4 comma or apostrophe is ALWAYS ""Grammar"", even if the correction
+So: anything involving a P2-P4 comma or apostrophe is ALWAYS ""Grammar"", even if the correction
 also improves the wording.
 
 ""category"" must be exactly one of these four strings, with exactly this capitalization:
@@ -395,53 +387,50 @@ they don't try to think themselves. On the other hand AI can create new jobs and
 life easier. In conclusion I think AI is very useful but people should use AI carefully and not
 depend on AI too much.
 
+Note: ""In my opinion"", ""Nowadays"", ""For example"", ""Also"", ""However"", ""On the other hand""
+and ""In conclusion"" all stay UNMARKED below — sentence-initial transitional-phrase commas are
+handled automatically outside your output (see Section 5), so none of them appear in
+correctedEssay or in the mistakes array. Only the errors that ARE your job are marked.
+
 Expected correctedEssay:
-<b>In my opinion</b> (In my opinion,) AI will make human life easier in the future.
-<b>Nowadays</b> (Nowadays,) many people <b>use AI programs</b> (rely on artificial intelligence)
+In my opinion AI will make human life easier in the future.
+Nowadays many people <b>use AI programs</b> (rely on artificial intelligence)
 because <b>AI programs</b> (these technologies) can help people in many different situations.
-<b>For example</b> (For example,) students can use AI to find information and solve difficult
-problems. <b>Also</b> (Also,) AI can help people at work and <b>save their time</b> (save time).
-<b>However</b> (However,) AI can also make human life more complicated. Many people <b>use AI
-too much</b> (rely on AI excessively) and they become lazy. <b>For example</b> (For example,)
+For example students can use AI to find information and solve difficult
+problems. Also AI can help people at work and <b>save their time</b> (save time).
+However AI can also make human life more complicated. Many people <b>use AI
+too much</b> (rely on AI excessively) and they become lazy. For example
 some students use AI for their homework and they don't try to <b>think themselves</b> (think
-independently). <b>On the other hand</b> (On the other hand,) AI can create new jobs and make
-our daily life easier. <b>In conclusion</b> (In conclusion,) I think AI is very <b>useful
+independently). On the other hand AI can create new jobs and make
+our daily life easier. In conclusion I think AI is very <b>useful
 but</b> (useful, but) people should use AI carefully and <b>not depend on AI too much</b>
 (avoid becoming overly dependent on it).
 
 Expected mistakes array — note two things: ""AI programs"" and ""use AI too much"" each get their
-OWN entry with a DIFFERENT synonym per occurrence (rule B1), while ""For example"" occurs twice
-but is listed ONCE because both occurrences get the identical correction (Section 4):
+OWN entry with a DIFFERENT synonym per occurrence (rule B1), while the two ""For example""
+occurrences generate no entry at all, for the reason explained above:
 [
-  {""wrong"": ""In my opinion"", ""correct"": ""In my opinion,"", ""category"": ""Grammar""},
-  {""wrong"": ""Nowadays"", ""correct"": ""Nowadays,"", ""category"": ""Grammar""},
   {""wrong"": ""use AI programs"", ""correct"": ""rely on artificial intelligence"", ""category"": ""Vocabulary""},
   {""wrong"": ""AI programs"", ""correct"": ""these technologies"", ""category"": ""Vocabulary""},
-  {""wrong"": ""For example"", ""correct"": ""For example,"", ""category"": ""Grammar""},
-  {""wrong"": ""Also"", ""correct"": ""Also,"", ""category"": ""Grammar""},
   {""wrong"": ""save their time"", ""correct"": ""save time"", ""category"": ""NaturalExpression""},
-  {""wrong"": ""However"", ""correct"": ""However,"", ""category"": ""Grammar""},
   {""wrong"": ""use AI too much"", ""correct"": ""rely on AI excessively"", ""category"": ""Vocabulary""},
   {""wrong"": ""think themselves"", ""correct"": ""think independently"", ""category"": ""NaturalExpression""},
-  {""wrong"": ""On the other hand"", ""correct"": ""On the other hand,"", ""category"": ""Grammar""},
-  {""wrong"": ""In conclusion"", ""correct"": ""In conclusion,"", ""category"": ""Grammar""},
   {""wrong"": ""useful but"", ""correct"": ""useful, but"", ""category"": ""Grammar""},
   {""wrong"": ""not depend on AI too much"", ""correct"": ""avoid becoming overly dependent on it"", ""category"": ""Vocabulary""}
 ]
 Now tally that array exactly as Section 9 requires — count each category literally:
-  Grammar        = In my opinion, Nowadays, For example, Also, However, On the other hand,
-                   In conclusion, useful but  -> 8
+  Grammar        = useful but -> 1
   Vocabulary     = use AI programs, AI programs, use AI too much, not depend on AI too much -> 4
   NaturalExpression = save their time, think themselves -> 2
   Spelling       = 0
-  total = 8 + 4 + 2 + 0 = 14, and the array holds exactly 14 items. So:
-  ""statistics"": {""grammar"": 8, ""spelling"": 0, ""vocabulary"": 4, ""naturalExpression"": 2, ""total"": 14}
+  total = 1 + 4 + 2 + 0 = 7, and the array holds exactly 7 items. So:
+  ""statistics"": {""grammar"": 1, ""spelling"": 0, ""vocabulary"": 4, ""naturalExpression"": 2, ""total"": 7}
 
 =====================================================================
 SECTION 11 — FINAL CHECK (perform silently before answering)
 =====================================================================
  1. No item has wrong == correct, or differs only by capitalization/spacing/punctuation
-    (except P1-P4).
+    (except P2-P4).
  2. Every ""wrong"" is an exact substring of the original essay.
  3. FORWARD coverage: every array item is marked in correctedEssay.
  4. REVERSE coverage: stripping all <b></b> markup and its parentheses from correctedEssay
