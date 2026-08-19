@@ -1,20 +1,19 @@
 namespace EssayChecker.Infrastructure.Services.Essays;
 
 /// <summary>
-/// AI-ın qaytardığı xam JSON-un birbaşa əksi (bax EssayPrompts Section 14 — "REQUIRED OUTPUT
-/// SHAPE"). Bu tiplər YALNIZ deserializasiya üçündür; domen tərəfə çevrilmə və AI-a etibar
-/// edilməyən sahələrin yenidən hesablanması <see cref="EssayEvaluationMapper"/>-də baş verir.
-///
-/// Qeyd: AI "statistics" obyekti də qaytarır, amma biz onu oxumuruq — sayğaclar mistakes
-/// massivindən özümüz hesablanır (bax mapper). System.Text.Json tanımadığı JSON sahələrini
-/// sükutla nəzərə almadığı üçün burada həmin sahə ümumiyyətlə elan edilmir.
+/// ÇAĞIRIŞ A-nın (səhv axtarışı) xam cavabı. Bu tiplər YALNIZ deserializasiya üçündür; domenə
+/// çevrilmə və AI-a etibar edilməyən sahələrin yenidən hesablanması
+/// <see cref="EssayEvaluationMapper"/>-də baş verir.
 /// </summary>
-internal sealed class AiEssayResponse
+internal sealed class AiDetectionResponse
 {
-    public string? Status { get; set; }
-    public string? Reason { get; set; }
-    public string? CorrectedEssay { get; set; }
+    public bool IsEssay { get; set; } = true;
     public List<AiMistake>? Mistakes { get; set; }
+}
+
+/// <summary>ÇAĞIRIŞ B-nin (bal + müəllim rəyi) xam cavabı.</summary>
+internal sealed class AiScoringResponse
+{
     public AiScores? Scores { get; set; }
     public AiFeedback? TeacherFeedback { get; set; }
 }
@@ -37,9 +36,6 @@ internal sealed class AiScores
     public string? GrammarComment { get; set; }
     public double Vocabulary { get; set; }
     public string? VocabularyComment { get; set; }
-
-    /// <summary>AI-ın öz cəmlədiyi bal — etibarsızdır, mapper onu yenidən hesablayır.</summary>
-    public double Total { get; set; }
 }
 
 internal sealed class AiFeedback

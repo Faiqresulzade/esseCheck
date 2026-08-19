@@ -3,7 +3,7 @@ using EssayChecker.Application.Common;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
 
-/// <summary>AI-ın xam mətn cavabını <see cref="AiEssayResponse"/>-a çevirir.</summary>
+/// <summary>AI-ın xam mətn cavabını gözlənilən cavab tipinə çevirir.</summary>
 internal static class AiEssayResponseParser
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -12,14 +12,17 @@ internal static class AiEssayResponseParser
     };
 
     /// <exception cref="JsonException">Cavab etibarlı JSON deyilsə — çağıran tərəf ehtiyat modelə keçir.</exception>
-    public static AiEssayResponse Parse(string raw)
+    public static T Parse<T>(string raw) where T : class
     {
         var json = ExtractJson(raw);
-        return JsonSerializer.Deserialize<AiEssayResponse>(json, JsonOptions)
+        return JsonSerializer.Deserialize<T>(json, JsonOptions)
             ?? throw new AiServiceException("AI cavabı boş qayıtdı.", isTransient: true);
     }
 
-    /// <summary>Sistem promptu xam JSON tələb edir, amma ehtiyat üçün ``` bloklarını təmizləyirik.</summary>
+    /// <summary>
+    /// response_format dəstəklənəndə cavab onsuz da xam JSON-dur, amma ehtiyat model sxemi
+    /// dəstəkləməyə bilər — ona görə ``` bloklarının təmizlənməsi yerində qalır.
+    /// </summary>
     private static string ExtractJson(string content)
     {
         var text = content.Trim();

@@ -4,6 +4,15 @@ using EssayChecker.Infrastructure.Ai;
 
 namespace EssayChecker.Infrastructure.Services.Essays;
 
+/// <summary>Səhv siyahısı və hər elementin orijinal mətndəki mövqeləri.</summary>
+internal sealed record MistakeSet(
+    IReadOnlyList<EssayMistakeDto> Mistakes,
+    IReadOnlyList<MistakeSpan> Spans)
+{
+    public static readonly MistakeSet Empty =
+        new(Array.Empty<EssayMistakeDto>(), Array.Empty<MistakeSpan>());
+}
+
 /// <summary>
 /// AI-ın xam cavabını domen nəticəsinə çevirir. Burada bir prinsip hakimdir: AI-ın öz-özünə
 /// hesabladığı hər şeyə (statistika sayğacları, balların cəmi, minimum söz sayı qaydası)
@@ -15,31 +24,166 @@ internal static class EssayEvaluationMapper
     /// <summary>11-ci sinifdə bu həddən az söz varsa, content balı istisnasız 0 olmalıdır (AI-a etibar edilmir).</summary>
     private const int Grade11ContentZeroFloorWords = 70;
 
-    public static EssayEvaluationData Map(AiEssayResponse dto, GradeLevel grade, string essayText)
-    {
-        if (string.Equals(dto.Status, "invalid", StringComparison.OrdinalIgnoreCase))
-        {
-            return new EssayEvaluationData
-            {
-                IsEssay = false,
-                InvalidReason = dto.Reason ?? "The submitted text is not an essay."
-            };
-        }
+    /// <summary>Promptdakı hədd ilə eyni — model onu aşsa da, siyahı burada kəsilir.</summary>
+    private const int MaxMistakes = 20;
 
-        var mistakes = MapMistakes(dto.Mistakes);
-        mistakes = AddIntroductoryCommaMistakes(mistakes, essayText);
-        mistakes = AddSentenceInitialBecauseMistakes(mistakes, essayText);
-        var scores = ApplyShortEssayContentFloor(MapScores(dto.Scores), grade, essayText);
+    /// <summary>
+    /// ÇAĞIRIŞ A-nın nəticəsini süzür və üzərinə deterministik qayda əsaslı səhvləri əlavə edir.
+    /// Nəticə ÇAĞIRIŞ B-yə giriş kimi verilir və eyni zamanda son cavabın əsasını təşkil edir.
+    /// </summary>
+    public static MistakeSet BuildMistakes(List<AiMistake>? aiMistakes, string essayText)
+    {
+        var spans = new List<MistakeSpan>();
+        AddAiMistakes(spans, aiMistakes, essayText);
+
+        var existingWrongTexts = new HashSet<string>(
+            spans.Select(s => s.Mistake.Wrong), StringComparer.Ordinal);
+
+        AddIntroductoryCommaMistakes(spans, essayText, existingWrongTexts);
+        AddSentenceInitialBecauseMistakes(spans, essayText, existingWrongTexts);
+
+        // Üst-üstə düşən mövqelər həm işarələmədən, həm siyahıdan çıxarılır — şagirdə eyni səhv
+        // iki dəfə (bəzən zidd iki düzəlişlə) göstərilməməlidir.
+        var resolved = MistakeSpans.ResolveOverlaps(spans, essayText.Length);
+        if (resolved.Count == 0)
+            return MistakeSet.Empty;
+
+        // Section 4 tələbinə uyğun olaraq siyahı mətndə ilk görünmə sırasındadır (ResolveOverlaps
+        // artıq bu sıraya düzüb). Bir DTO-nun (qayda əsaslı elementlərdə) bir neçə mövqeyi ola
+        // bilər — siyahıda yalnız bir dəfə görünür.
+        var mistakes = resolved
+            .Select(s => s.Mistake)
+            .Distinct()
+            .ToList();
+
+        return new MistakeSet(mistakes, resolved);
+    }
+
+    public static EssayEvaluationData Map(
+        MistakeSet mistakeSet,
+        AiScoringResponse scoring,
+        GradeLevel grade,
+        string essayText)
+    {
+        var scores = ApplyShortEssayContentFloor(MapScores(scoring.Scores), grade, essayText);
 
         return new EssayEvaluationData
         {
             IsEssay = true,
-            CorrectedEssay = CorrectedEssayMarkup.Normalize(dto.CorrectedEssay ?? string.Empty, mistakes),
-            Statistics = ComputeStatistics(mistakes),
+            CorrectedEssay = CorrectedEssayBuilder.Build(essayText, mistakeSet.Spans),
+            Statistics = ComputeStatistics(mistakeSet.Mistakes),
             Scores = scores,
-            Mistakes = mistakes,
-            Feedback = MapFeedback(dto.TeacherFeedback)
+            Mistakes = mistakeSet.Mistakes,
+            Feedback = MapFeedback(scoring.TeacherFeedback)
         };
+    }
+
+    /// <summary>
+    /// AI-ın qaytardığı hər elementi essenin özü ilə üzləşdirib süzür. Model uydurduğu və ya
+    /// mövqeyi qeyri-müəyyən olan elementlər buraxılır — müəllim etibarını ən tez itirən nöqtə
+    /// budur.
+    /// </summary>
+    private static void AddAiMistakes(List<MistakeSpan> spans, List<AiMistake>? aiMistakes, string essayText)
+    {
+        if (aiMistakes is null || aiMistakes.Count == 0)
+            return;
+
+        var seenWrong = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var m in aiMistakes)
+        {
+            var wrong = (m.Wrong ?? string.Empty).Trim();
+            var correct = (m.Correct ?? string.Empty).Trim();
+
+            if (wrong.Length == 0 || correct.Length == 0)
+                continue;
+
+            // Eyni mətn (yalnız hərf ölçüsü fərqi də daxil) — Section 6-ya görə capitalization
+            // heç vaxt səhv deyil, ona görə belə element mənasızdır.
+            if (string.Equals(wrong, correct, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Halüsinasiya: şagirdin yazmadığı mətn müəllimə göstərilə bilməz.
+            var first = essayText.IndexOf(wrong, StringComparison.Ordinal);
+            if (first < 0)
+                continue;
+
+            // Unikal olmayan "wrong" hansı nüsxəyə aid olduğunu bildirmir — işarələmə təsadüfi
+            // yerə düşərdi və B1-in "ilk nüsxəyə toxunma" qaydası pozulardı.
+            if (essayText.IndexOf(wrong, first + 1, StringComparison.Ordinal) >= 0)
+                continue;
+
+            if (!seenWrong.Add(wrong))
+                continue;
+
+            var category = Enum.TryParse<MistakeCategory>(m.Category, ignoreCase: true, out var parsed)
+                ? parsed
+                : MistakeCategory.Grammar;
+
+            spans.Add(new MistakeSpan(first, wrong.Length,
+                new EssayMistakeDto(wrong, correct, category, m.Reason ?? string.Empty)));
+
+            if (spans.Count == MaxMistakes)
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Cümlə əvvəlindəki keçid ifadəsindən sonra vergül qaydası (əvvəllər prompt-un P1 qaydası)
+    /// AI-a etibar edilmədən, birbaşa orijinal mətndə deterministik yoxlanılır. AI bu qaydanı
+    /// mistakes massivinə əlavə etməyi tez-tez unudurdu — indi bu, kodun öz məsuliyyətidir.
+    /// </summary>
+    private static void AddIntroductoryCommaMistakes(
+        List<MistakeSpan> spans, string essayText, HashSet<string> existingWrongTexts)
+    {
+        var byPhrase = new Dictionary<string, EssayMistakeDto>(StringComparer.Ordinal);
+
+        foreach (var violation in IntroductoryCommaRule.FindViolations(essayText))
+        {
+            if (existingWrongTexts.Contains(violation.Phrase))
+                continue;
+
+            if (!byPhrase.TryGetValue(violation.Phrase, out var mistake))
+            {
+                mistake = new EssayMistakeDto(
+                    violation.Phrase,
+                    violation.Phrase + ",",
+                    MistakeCategory.Grammar,
+                    "Cümlə əvvəlindəki keçid ifadəsindən sonra vergül tələb olunur.");
+                byPhrase.Add(violation.Phrase, mistake);
+            }
+
+            spans.Add(new MistakeSpan(violation.Index, violation.Phrase.Length, mistake));
+        }
+    }
+
+    /// <summary>
+    /// Cümlə "Because" ilə başlayanda (əvvəllər AI-ın öz mühakiməsi ilə tutduğu, tutarlılığı
+    /// sabit olmayan bir hal) artıq AI-a etibar edilmir — deterministik aşkarlanır və kodda
+    /// təsadüfi seçilmiş sinonimlə ("As" / "Since" / "This is because") əvəz olunur.
+    /// </summary>
+    private static void AddSentenceInitialBecauseMistakes(
+        List<MistakeSpan> spans, string essayText, HashSet<string> existingWrongTexts)
+    {
+        var byWord = new Dictionary<string, EssayMistakeDto>(StringComparer.Ordinal);
+
+        foreach (var violation in SentenceInitialBecauseRule.FindViolations(essayText))
+        {
+            if (existingWrongTexts.Contains(violation.Wrong))
+                continue;
+
+            if (!byWord.TryGetValue(violation.Wrong, out var mistake))
+            {
+                mistake = new EssayMistakeDto(
+                    violation.Wrong,
+                    SentenceInitialBecauseRule.PickSynonym(violation.Wrong, Random.Shared),
+                    MistakeCategory.Grammar,
+                    "Cümlə \"Because\" ilə başlamamalıdır — sinonimlə əvəz olunur.");
+                byWord.Add(violation.Wrong, mistake);
+            }
+
+            spans.Add(new MistakeSpan(violation.Index, violation.Wrong.Length, mistake));
+        }
     }
 
     /// <summary>
@@ -59,11 +203,6 @@ internal static class EssayEvaluationMapper
         };
     }
 
-    /// <summary>
-    /// AI-ın öz-özünə saydığı "statistics" tez-tez mistakes massivinin faktiki tərkibi ilə uyğun
-    /// gəlmir (bir neçə model üzərində test edilib, hamısında rast gəlindi) — ona görə etibar
-    /// etmək əvəzinə, statistikanı birbaşa artıq map olunmuş mistakes siyahısından sayırıq.
-    /// </summary>
     private static EssayStatisticsDto ComputeStatistics(IReadOnlyList<EssayMistakeDto> mistakes)
     {
         var grammar = 0;
@@ -90,8 +229,6 @@ internal static class EssayEvaluationMapper
         if (s is null)
             return new EssayScoresDto(0, "", 0, "", 0, "", 0, "", 0);
 
-        // AI-ın öz cəmlədiyi "total" tez-tez 4 alt-balın həqiqi cəmi ilə uyğun gəlmir (eynilə
-        // statistics sayğacındakı problem kimi) — ona görə etibar etmək əvəzinə özümüz cəmləyirik.
         var total = Math.Round(s.Structure + s.Content + s.Grammar + s.Vocabulary, 1, MidpointRounding.AwayFromZero);
 
         return new EssayScoresDto(
@@ -100,118 +237,6 @@ internal static class EssayEvaluationMapper
             s.Grammar, s.GrammarComment ?? "",
             s.Vocabulary, s.VocabularyComment ?? "",
             total);
-    }
-
-    private static IReadOnlyList<EssayMistakeDto> MapMistakes(List<AiMistake>? mistakes)
-    {
-        if (mistakes is null || mistakes.Count == 0)
-            return Array.Empty<EssayMistakeDto>();
-
-        var result = new List<EssayMistakeDto>(mistakes.Count);
-        foreach (var m in mistakes)
-        {
-            var wrong = m.Wrong ?? string.Empty;
-            var correct = m.Correct ?? string.Empty;
-
-            // Promptun Section 5-i (self-check) AI-a "wrong" == "correct" olan elementləri
-            // heç vaxt daxil etməməyi əmr edir, amma model bəzən buna əməl etmir (istifadəçi
-            // production-da "reasons (reasons)" kimi hallar tapıb) — ona görə bunu AI-a etibar
-            // etmədən burada məcburi süzürük, eynilə digər "AI-a etibar etmə" qaydaları kimi.
-            if (string.Equals(wrong.Trim(), correct.Trim(), StringComparison.Ordinal))
-                continue;
-
-            var category = Enum.TryParse<MistakeCategory>(m.Category, ignoreCase: true, out var parsed)
-                ? parsed
-                : MistakeCategory.Grammar;
-
-            result.Add(new EssayMistakeDto(wrong, correct, category, m.Reason ?? string.Empty));
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Cümlə əvvəlindəki keçid ifadəsindən sonra vergül qaydası (əvvəllər prompt-un P1 qaydası)
-    /// AI-a etibar edilmədən, birbaşa orijinal mətndə deterministik yoxlanılır. AI bu qaydanı
-    /// mistakes massivinə əlavə etməyi tez-tez unudurdu — indi bu, kodun öz məsuliyyətidir.
-    /// </summary>
-    private static IReadOnlyList<EssayMistakeDto> AddIntroductoryCommaMistakes(
-        IReadOnlyList<EssayMistakeDto> mistakes, string essayText)
-    {
-        var violations = IntroductoryCommaRule.FindViolations(essayText);
-        if (violations.Count == 0)
-            return mistakes;
-
-        var existingWrongTexts = new HashSet<string>(
-            mistakes.Select(m => m.Wrong.Trim()), StringComparer.Ordinal);
-
-        var newEntries = violations
-            .Select(v => v.Phrase)
-            .Distinct(StringComparer.Ordinal)
-            .Where(phrase => !existingWrongTexts.Contains(phrase))
-            .Select(phrase => new EssayMistakeDto(
-                phrase,
-                phrase + ",",
-                MistakeCategory.Grammar,
-                "Cümlə əvvəlindəki keçid ifadəsindən sonra vergül tələb olunur."))
-            .ToList();
-
-        if (newEntries.Count == 0)
-            return mistakes;
-
-        // Section 4 tələbinə uyğun olaraq, bütün siyahını mətndə ilk görünmə sırasına görə düzürük.
-        return mistakes
-            .Concat(newEntries)
-            .OrderBy(m =>
-            {
-                var idx = essayText.IndexOf(m.Wrong, StringComparison.Ordinal);
-                return idx >= 0 ? idx : int.MaxValue;
-            })
-            .ToList();
-    }
-
-    /// <summary>
-    /// Cümlə "Because" ilə başlayanda (əvvəllər AI-ın öz mühakiməsi ilə tutduğu, tutarlılığı
-    /// sabit olmayan bir hal) artıq AI-a etibar edilmir — deterministik aşkarlanır və kodda
-    /// təsadüfi seçilmiş sinonimlə ("As" / "Since" / "This is because") əvəz olunur.
-    /// </summary>
-    private static IReadOnlyList<EssayMistakeDto> AddSentenceInitialBecauseMistakes(
-        IReadOnlyList<EssayMistakeDto> mistakes, string essayText)
-    {
-        var violations = SentenceInitialBecauseRule.FindViolations(essayText);
-        if (violations.Count == 0)
-            return mistakes;
-
-        var existingWrongTexts = new HashSet<string>(
-            mistakes.Select(m => m.Wrong.Trim()), StringComparer.Ordinal);
-
-        var random = Random.Shared;
-        var newEntries = new List<EssayMistakeDto>();
-
-        foreach (var wrong in violations.Select(v => v.Wrong).Distinct(StringComparer.Ordinal))
-        {
-            if (existingWrongTexts.Contains(wrong))
-                continue;
-
-            var correct = SentenceInitialBecauseRule.PickSynonym(wrong, random);
-            newEntries.Add(new EssayMistakeDto(
-                wrong,
-                correct,
-                MistakeCategory.Grammar,
-                "Cümlə \"Because\" ilə başlamamalıdır — sinonimlə əvəz olunur."));
-        }
-
-        if (newEntries.Count == 0)
-            return mistakes;
-
-        return mistakes
-            .Concat(newEntries)
-            .OrderBy(m =>
-            {
-                var idx = essayText.IndexOf(m.Wrong, StringComparison.Ordinal);
-                return idx >= 0 ? idx : int.MaxValue;
-            })
-            .ToList();
     }
 
     private static TeacherFeedbackDto MapFeedback(AiFeedback? f) =>

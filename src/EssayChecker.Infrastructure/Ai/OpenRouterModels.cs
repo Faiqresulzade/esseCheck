@@ -24,6 +24,15 @@ internal sealed class ChatCompletionRequest
     /// </summary>
     [JsonPropertyName("reasoning")]
     public ReasoningOptions Reasoning { get; set; } = new();
+
+    /// <summary>
+    /// Struktur çıxış sxemi (bax <see cref="EssaySchemas"/>). Dəstəkləyən modellərdə JSON forması
+    /// modelin öz iradəsindən deyil, dekoderdən asılı olur. Dəstəkləməyən modellərdə OpenRouter
+    /// sahəni sadəcə buraxır — ona görə parser-in ExtractJson ehtiyatı yerində qalır.
+    /// </summary>
+    [JsonPropertyName("response_format")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object? ResponseFormat { get; set; }
 }
 
 internal sealed class ReasoningOptions

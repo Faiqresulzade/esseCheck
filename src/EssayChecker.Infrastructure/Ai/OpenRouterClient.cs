@@ -26,14 +26,16 @@ internal sealed class OpenRouterClient
     public async Task<string> CompleteAsync(
         string model,
         IReadOnlyList<ChatMessage> messages,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        object? responseFormat = null)
     {
         var payload = new ChatCompletionRequest
         {
             Model = model,
             Messages = messages,
             Temperature = _settings.Temperature,
-            MaxTokens = _settings.MaxTokens
+            MaxTokens = _settings.MaxTokens,
+            ResponseFormat = responseFormat
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, _settings.BaseUrl)

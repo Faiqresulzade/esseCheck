@@ -12,9 +12,11 @@ using Microsoft.Extensions.Options;
 namespace EssayChecker.Infrastructure.Services.Essays;
 
 /// <summary>
-/// Esseni OpenRouter üzərindən qiymətləndirir: sorğunu qurur, model uğursuz olarsa ehtiyat
-/// modelə keçir. Cavabın parse edilməsi və domenə çevrilməsi ayrıca siniflərə həvalə olunub
-/// (<see cref="AiEssayResponseParser"/>, <see cref="EssayEvaluationMapper"/>).
+/// Esseni OpenRouter üzərindən qiymətləndirir. Qiymətləndirmə iki ardıcıl çağırışdan ibarətdir:
+/// əvvəlcə səhvlər tapılır, sonra həmin siyahı giriş kimi verilib bal və müəllim rəyi alınır.
+/// Hər çağırış model uğursuz olarsa ehtiyat modelə keçir. Cavabın parse edilməsi və domenə
+/// çevrilməsi ayrıca siniflərə həvalə olunub (<see cref="AiEssayResponseParser"/>,
+/// <see cref="EssayEvaluationMapper"/>).
 /// </summary>
 internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 {
@@ -39,11 +41,54 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         IReadOnlyList<PromptImage>? promptImages = null,
         CancellationToken cancellationToken = default)
     {
-        var messages = BuildMessages(essayText, grade, topic, promptImages);
+        var hasImages = promptImages is { Count: > 0 };
+        var userContent = BuildUserContent(essayText, promptImages);
 
-        // Sırayla cəhd ediləcək modellər: əvvəlcə əsas, o uğursuz olarsa (və konfiqurasiya
-        // olunubsa) bir dəfə ehtiyat model. Siyahı sabit və ən çoxu 2 elementdir — buna görə
-        // aşağıdakı dövr struktur olaraq sonsuz loopa düşə bilməz.
+        var detection = await CallWithFallbackAsync<AiDetectionResponse>(
+            EssayPrompts.DetectionRules,
+            EssayPrompts.GetDetectionInput(hasImages),
+            userContent,
+            EssaySchemas.Detection,
+            cancellationToken);
+
+        if (!detection.IsEssay)
+        {
+            return new EssayEvaluationData
+            {
+                IsEssay = false,
+                InvalidReason = "The submitted text is not an essay."
+            };
+        }
+
+        var mistakes = EssayEvaluationMapper.BuildMistakes(detection.Mistakes, essayText);
+
+        // Bal çağırışı səhv siyahısından asılıdır, ona görə paralel deyil, ardıcıl gedir:
+        // qrammatika balı real səhv sıxlığını əks etdirməlidir, model isə səhvləri ikinci
+        // dəfə axtarmamalıdır.
+        var scoring = await CallWithFallbackAsync<AiScoringResponse>(
+            EssayPrompts.ScoringRules,
+            EssayPrompts.GetScoringInput(grade, essayText, topic, mistakes.Mistakes, hasImages),
+            userContent,
+            EssaySchemas.Scoring,
+            cancellationToken);
+
+        return EssayEvaluationMapper.Map(mistakes, scoring, grade, essayText);
+    }
+
+    /// <summary>
+    /// Sırayla cəhd ediləcək modellər: əvvəlcə əsas, o uğursuz olarsa (və konfiqurasiya olunubsa)
+    /// bir dəfə ehtiyat model. Siyahı sabit və ən çoxu 2 elementdir — buna görə aşağıdakı dövr
+    /// struktur olaraq sonsuz loopa düşə bilməz.
+    /// </summary>
+    private async Task<T> CallWithFallbackAsync<T>(
+        string staticRules,
+        string dynamicInput,
+        object userContent,
+        object responseSchema,
+        CancellationToken cancellationToken) where T : class
+    {
+        var messages = BuildMessages(staticRules, dynamicInput, userContent);
+
         var modelsToTry = string.IsNullOrWhiteSpace(_settings.FallbackModel)
             ? new[] { _settings.Model }
             : new[] { _settings.Model, _settings.FallbackModel };
@@ -57,8 +102,8 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
             var attemptStart = stopwatch.Elapsed;
             try
             {
-                var raw = await _client.CompleteAsync(model, messages, cancellationToken);
-                var dto = AiEssayResponseParser.Parse(raw);
+                var raw = await _client.CompleteAsync(model, messages, cancellationToken, responseSchema);
+                var parsed = AiEssayResponseParser.Parse<T>(raw);
 
                 if (i > 0)
                 {
@@ -67,7 +112,7 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
                         model, (stopwatch.Elapsed - attemptStart).TotalMilliseconds, stopwatch.ElapsedMilliseconds);
                 }
 
-                return EssayEvaluationMapper.Map(dto, grade, essayText);
+                return parsed;
             }
             catch (JsonException ex)
             {
@@ -97,44 +142,28 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
 
     /// <summary>
     /// Sistem promptu iki hissəyə bölünür ki, Anthropic prompt caching işləsin: sabit qayda
-    /// dəsti (StaticRules) cache_control ilə işarələnir və HƏR sorğuda (sinif/mövzu/esse fərqli
-    /// olsa belə) bayt-bayt eynidir, ona görə Anthropic onu keşləyir. Sorğuya-görə-dəyişən
-    /// dəyərlər (sinif, mövzu, söz sayı) ayrı, keşlənməmiş bir bloka qoyulur.
+    /// dəsti cache_control ilə işarələnir və HƏR sorğuda (sinif/mövzu/esse fərqli olsa belə)
+    /// bayt-bayt eynidir, ona görə Anthropic onu keşləyir. Sorğuya-görə-dəyişən dəyərlər ayrı,
+    /// keşlənməmiş bir bloka qoyulur.
     /// </summary>
-    private static ChatMessage[] BuildMessages(
-        string essayText,
-        GradeLevel grade,
-        string? topic,
-        IReadOnlyList<PromptImage>? promptImages)
-    {
-        var hasImages = promptImages is { Count: > 0 };
-
-        return
-        [
-            new ChatMessage
+    private static ChatMessage[] BuildMessages(string staticRules, string dynamicInput, object userContent) =>
+    [
+        new ChatMessage
+        {
+            Role = "system",
+            Content = new[]
             {
-                Role = "system",
-                Content = new[]
-                {
-                    new TextContentPart
-                    {
-                        Text = EssayPrompts.StaticRules,
-                        CacheControl = new CacheControl()
-                    },
-                    new TextContentPart
-                    {
-                        Text = EssayPrompts.GetDynamicInputVariables(grade, essayText, topic, hasImages)
-                    }
-                }
-            },
-            new ChatMessage { Role = "user", Content = BuildUserContent(essayText, promptImages) }
-        ];
-    }
+                new TextContentPart { Text = staticRules, CacheControl = new CacheControl() },
+                new TextContentPart { Text = dynamicInput }
+            }
+        },
+        new ChatMessage { Role = "user", Content = userContent }
+    ];
 
     /// <summary>
     /// Şəkil yoxdursa (11-ci sinif) sadə mətn stringi, varsa (9-cu sinif) mətn + şəkillərdən
-    /// ibarət multimodal content massivi qaytarır — vision dəstəkli model (hazırda gpt-4o-mini)
-    /// hər ikisini eyni sorğuda görür.
+    /// ibarət multimodal content massivi qaytarır — vision dəstəkli model hər ikisini eyni
+    /// sorğuda görür.
     /// </summary>
     private static object BuildUserContent(string essayText, IReadOnlyList<PromptImage>? promptImages)
     {
