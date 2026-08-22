@@ -18,4 +18,18 @@ public static class PlanPolicy
     };
 
     public static bool IsUnlimited(SubscriptionPlan plan) => DailyLimit(plan) is null;
+
+    /// <summary>
+    /// Gündəlik mövzu izahı (dərs) limiti. Esse limitindən TAM AYRIDIR — yəni Free istifadəçi
+    /// bir gündə həm 1 esse, həm də 1 dərs ala bilər. null = limitsiz.
+    /// </summary>
+    public static int? LessonDailyLimit(SubscriptionPlan plan) => plan switch
+    {
+        SubscriptionPlan.Free => 1,
+        SubscriptionPlan.Pro => 5,
+        SubscriptionPlan.ProPlus => null,
+        _ => 1
+    };
+
+    public static bool IsLessonUnlimited(SubscriptionPlan plan) => LessonDailyLimit(plan) is null;
 }

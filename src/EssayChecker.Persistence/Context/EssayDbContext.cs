@@ -1,4 +1,5 @@
 ﻿using EssayChecker.Domain.Entities.Essays;
+using EssayChecker.Domain.Entities.Lessons;
 using EssayChecker.Domain.Entities.Logs;
 using EssayChecker.Domain.Entities.Marketing;
 using EssayChecker.Domain.Entities.Subscriptions;
@@ -36,6 +37,10 @@ public class EssayDbContext
     public DbSet<StudentGroup> StudentGroups => Set<StudentGroup>();
 
     public DbSet<Student> Students => Set<Student>();
+
+    public DbSet<Lesson> Lessons => Set<Lesson>();
+
+    public DbSet<LessonTemplate> LessonTemplates => Set<LessonTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

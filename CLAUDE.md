@@ -121,7 +121,21 @@ was wrong. Don't reintroduce search-based marking.
 support `temperature`, so the `Temperature: 0` setting is silently dropped for it and output varies
 between runs on the same essay — the same essay can score 2.4 or 2.7 and produce 18 or 21 mistakes.
 `OpenRouterSettings.Temperature`'s "same essay always gets the same result" comment no longer holds
-here. The model does support `seed`, which is not wired up yet. OCR still uses `gpt-4o-mini`.
+here. OCR still uses `gpt-4o-mini`.
+
+`seed` **is** wired up now (`OpenRouterSettings.Seed` → `ChatCompletionRequest.seed`, omitted entirely
+when null) but is deliberately left unset, because it was measured on 2026-08-20 and **does nothing on
+this model**: nine runs of the same three essays with the same seed produced nine different results,
+and a minimal probe with an identical seed returned three different completions. The request is
+accepted without error and `system_fingerprint` comes back null, so there is no way to detect this
+from the response — don't assume enabling it fixes run-to-run variance. The plumbing is kept so that
+switching to a model that honours it is a config-only change.
+
+**Measured accuracy (2026-08-20, 10 hand-written ~100-word Grade11 essays, 543 planted errors across
+3 runs):** recall ~94.5%, zero invented errors, precision ~98%. Run-to-run variance is large — the
+same essay swings ±3 mistakes and ±0.5 points — so a single A/B run cannot resolve a ~1% prompt change;
+average several runs per variant before believing any prompt result. Score accuracy against real
+teacher marks has never been measured (no ground-truth set exists yet).
 
 Both `DetectionRules` and `ScoringRules` are deliberately byte-for-byte identical across all requests
 (grade/topic/word-count/detected-errors are injected in a separate later message) so Anthropic's
@@ -176,6 +190,41 @@ touch the daily quota and cost nothing.
 - Group analytics excludes soft-deleted students so the numbers match the visible roster — note this
   differs from `/essay/history?groupId=`, which deliberately still finds their essays.
 
+### Lessons (topic explanations)
+
+`POST /api/lessons` builds a 6-8 slide English lesson (Azerbaijani explanations, English examples)
+plus a 3-question quiz; `GET /api/lessons`, `GET|DELETE /api/lessons/{id}` are free of AI and quota.
+Built to the frontend order in `BACKEND_LESSON_FEATURE.md`.
+
+- Uses its own model (`OpenRouter:LessonModel`, currently `gpt-4o-mini`) and its own daily counter
+  (`DailyUsage.LessonCount`, `PlanPolicy.LessonDailyLimit` = 1/5/unlimited) — **completely separate
+  from the essay limit**, so a Free user gets 1 essay *and* 1 lesson per day.
+- Off-topic requests come back through the same one-call pattern as essays: the AI returns
+  `isEnglishTopic: false` → `422`, nothing persisted, counter untouched. There is no second
+  validation call, so a rejected topic costs one cheap AI call and no quota.
+- **Three-level saving.** (1) The user already has that topic+grade → the existing lesson is
+  returned, no AI *and no quota*. (2) A `LessonTemplate` exists → no AI, but quota is still charged
+  (deliberate, per spec §6). (3) Otherwise generate and cache. The cache key is
+  `NormalizedTopic + Grade + LessonPrompts.Version`, so **bumping `LessonPrompts.Version` after
+  editing the prompt is mandatory** — otherwise every user keeps getting the pre-edit lesson forever.
+- `LessonContentMapper` deliberately does *not* repair slide/quiz counts (the product decision was
+  "return what the AI gave"). It only guarantees every field is present (null/empty array), drops
+  a quiz question whose `correctIndex` falls outside its own `options` (such a question would mark
+  the right answer wrong), and **rotates the options so the correct answer lands on a different
+  position in each question** — `gpt-4o-mini` put every correct answer at index 0 in every measured
+  lesson despite the prompt forbidding it. The rotation is a cyclic shift driven by a stable FNV-1a
+  hash of the question text plus the question's position, so it is deterministic (never `Random`,
+  never `string.GetHashCode`, which is per-process randomised) and a cached template can never
+  disagree with the lessons copied from it. Options containing "above"/"yuxarıdakı" are left alone.
+- Slides and quiz are nested JSON columns (`OwnsMany(...).ToJson()` with owned collections inside);
+  verified to round-trip losslessly including `comparison` and `examples`.
+- **Measured 2026-08-22 with `gpt-4o-mini`:** structure is reliable (7 slides in the right order,
+  all `highlight` values were literal substrings, 3×4 quiz options, correct 422/429/404 behaviour),
+  but content quality is mediocre: the index-0 problem is now fixed in code (see above), yet the
+  Grade9/Grade11 difference remains weak (703 vs 975 characters of explanation, near-identical
+  examples) and summary points tend toward the generic. Switching `LessonModel` is a config-only
+  change if this matters more later.
+
 ### Error response conventions (see POSTMAN_DOCS.md §1.6 for full detail)
 
 - Validation/logic errors: `{ "message": "..." }`, usually `400`.
@@ -195,6 +244,7 @@ blocked.
 ### Subscriptions
 
 Plans: `Free` (1 essay/day, no OCR), `Pro` (unlimited text, no OCR), `ProPlus` (unlimited text + OCR).
+Lessons have their own separate daily allowance on top of this (see above).
 `SubscriptionController` supports manual/test plan assignment (`/subscribe`) plus real Google Play
 Billing (`/google/verify` validates a purchase server-side against the Google Play Developer API;
 `/google/rtdn` is the Pub/Sub push webhook for Google-initiated subscription state changes, secured
@@ -208,8 +258,11 @@ UTC midnight.
   requests across Auth/Account/Essay/Subscription); `EssayCheck.postman_collection.json` is the
   importable collection.
 - `FRONTEND_UNIFIED_PLAN_LIMITS.md`, `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md`,
-  `FRONTEND_TEACHER_GROUPS.md` — notes written for frontend/mobile-side implementation of specific
-  features (plan limit display, natural-expression scoring UI, teacher groups/students + analytics).
+  `FRONTEND_TEACHER_GROUPS.md`, `FRONTEND_LESSONS.md` — notes written for frontend/mobile-side
+  implementation of specific features (plan limit display, natural-expression scoring UI, teacher
+  groups/students + analytics, topic-explanation lessons).
+- `BACKEND_LESSON_FEATURE.md` — the frontend team's original order for the lesson feature; the
+  built result and the three places it deviates are documented in `FRONTEND_LESSONS.md` §1.
 
 ## Notes
 

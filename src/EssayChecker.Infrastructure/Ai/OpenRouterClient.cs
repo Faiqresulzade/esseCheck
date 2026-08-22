@@ -35,7 +35,8 @@ internal sealed class OpenRouterClient
             Messages = messages,
             Temperature = _settings.Temperature,
             MaxTokens = _settings.MaxTokens,
-            ResponseFormat = responseFormat
+            ResponseFormat = responseFormat,
+            Seed = _settings.Seed
         };
 
         using var request = new HttpRequestMessage(HttpMethod.Post, _settings.BaseUrl)

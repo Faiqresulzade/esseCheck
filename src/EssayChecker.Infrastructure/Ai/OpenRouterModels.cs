@@ -33,6 +33,14 @@ internal sealed class ChatCompletionRequest
     [JsonPropertyName("response_format")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object? ResponseFormat { get; set; }
+
+    /// <summary>
+    /// Sabit sample seed — eyni giriş eyni cavabı versin deyə (bax <see cref="OpenRouterSettings.Seed"/>).
+    /// Təyin olunmayanda sahə ümumiyyətlə göndərilmir, çünki bəzi modellər tanımadığı sahəyə xəta verir.
+    /// </summary>
+    [JsonPropertyName("seed")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Seed { get; set; }
 }
 
 internal sealed class ReasoningOptions

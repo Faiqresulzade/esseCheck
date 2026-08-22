@@ -17,6 +17,12 @@ public class DailyUsage
 
     public int OcrCheckCount { get; set; }
 
+    /// <summary>
+    /// Yaradılmış dərs sayı. Esse sayğaclarından (Text/Ocr) TAM AYRIDIR — dərs limiti ayrıca
+    /// hesablanır, bax PlanPolicy.LessonDailyLimit.
+    /// </summary>
+    public int LessonCount { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

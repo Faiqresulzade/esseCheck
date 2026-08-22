@@ -5,6 +5,7 @@ using EssayChecker.Infrastructure.Ai;
 using EssayChecker.Infrastructure.GooglePlay;
 using EssayChecker.Infrastructure.Services.Analytics;
 using EssayChecker.Infrastructure.Services.Essays;
+using EssayChecker.Infrastructure.Services.Lessons;
 using EssayChecker.Infrastructure.Services.Logs;
 using EssayChecker.Infrastructure.Services.Subscriptions;
 using EssayChecker.Infrastructure.Services.Teaching;
@@ -63,6 +64,10 @@ public static class DependencyInjection
 
         // Analitika — mövcud esse nəticələrindən hesablanır, AI çağırışı yoxdur.
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+        // Mövzu izahı (dərs) — ayrı model (OpenRouter:LessonModel) və ayrı gündəlik limit.
+        services.AddScoped<ILessonGenerator, OpenRouterLessonGenerator>();
+        services.AddScoped<ILessonService, LessonService>();
 
         // Subscription / Daily limit
         services.AddScoped<ISubscriptionService, SubscriptionService>();

@@ -17,5 +17,11 @@ public interface IUsageLimitService
     /// <summary>Uğurlu OCR-dan sonra sayğacı artırır.</summary>
     Task ConsumeOcrAsync(int userId, CancellationToken cancellationToken = default);
 
+    /// <summary>Yeni dərs yaratmağa icazə var? Esse limitindən ayrı sayğac (sayğacı ARTIRMIR).</summary>
+    Task<UsageDecision> CheckLessonAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Uğurlu dərs yaradılışından sonra gündəlik dərs sayğacını artırır.</summary>
+    Task ConsumeLessonAsync(int userId, CancellationToken cancellationToken = default);
+
     Task<DailyUsageStatusResponse> GetStatusAsync(int userId, CancellationToken cancellationToken = default);
 }

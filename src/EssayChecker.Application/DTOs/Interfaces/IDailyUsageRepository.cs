@@ -11,4 +11,7 @@ public interface IDailyUsageRepository
 
     /// <summary>Verilən gün üçün OCR sayğacını +1 edir (yoxdursa yaradır).</summary>
     Task IncrementOcrAsync(int userId, DateOnly usageDate, CancellationToken cancellationToken = default);
+
+    /// <summary>Verilən gün üçün dərs sayğacını +1 edir (yoxdursa yaradır).</summary>
+    Task IncrementLessonAsync(int userId, DateOnly usageDate, CancellationToken cancellationToken = default);
 }

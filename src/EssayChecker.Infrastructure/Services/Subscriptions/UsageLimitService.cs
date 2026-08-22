@@ -35,6 +35,24 @@ public sealed class UsageLimitService : IUsageLimitService
     public Task ConsumeOcrAsync(int userId, CancellationToken cancellationToken = default) =>
         _usageRepository.IncrementOcrAsync(userId, TodayUtc(), cancellationToken);
 
+    public async Task<UsageDecision> CheckLessonAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
+        var limit = PlanPolicy.LessonDailyLimit(plan);
+
+        if (limit is null)
+            return UsageDecision.Allow();
+
+        var usage = await _usageRepository.GetAsync(userId, TodayUtc(), cancellationToken);
+
+        return (usage?.LessonCount ?? 0) >= limit.Value
+            ? UsageDecision.Deny($"Bugünkü dərs limitiniz ({limit}) bitib. Sabah yenilənəcək və ya planınızı yüksəldin.")
+            : UsageDecision.Allow();
+    }
+
+    public Task ConsumeLessonAsync(int userId, CancellationToken cancellationToken = default) =>
+        _usageRepository.IncrementLessonAsync(userId, TodayUtc(), cancellationToken);
+
     private async Task<UsageDecision> CheckAsync(int userId, CancellationToken cancellationToken)
     {
         var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
@@ -54,9 +72,14 @@ public sealed class UsageLimitService : IUsageLimitService
     {
         var plan = await _subscriptionService.GetActivePlanAsync(userId, cancellationToken);
         var limit = PlanPolicy.DailyLimit(plan);
-        var used = await GetUsedTodayAsync(userId, cancellationToken);
+        var lessonLimit = PlanPolicy.LessonDailyLimit(plan);
+
+        var usage = await _usageRepository.GetAsync(userId, TodayUtc(), cancellationToken);
+        var used = (usage?.TextCheckCount ?? 0) + (usage?.OcrCheckCount ?? 0);
+        var lessonsUsed = usage?.LessonCount ?? 0;
 
         int? remaining = limit is null ? null : Math.Max(0, limit.Value - used);
+        int? lessonRemaining = lessonLimit is null ? null : Math.Max(0, lessonLimit.Value - lessonsUsed);
         var resetAtUtc = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(1), DateTimeKind.Utc);
 
         return new DailyUsageStatusResponse(
@@ -65,7 +88,11 @@ public sealed class UsageLimitService : IUsageLimitService
             limit,
             used,
             remaining,
-            resetAtUtc);
+            resetAtUtc,
+            PlanPolicy.IsLessonUnlimited(plan),
+            lessonLimit,
+            lessonsUsed,
+            lessonRemaining);
     }
 
     private async Task<int> GetUsedTodayAsync(int userId, CancellationToken cancellationToken)

@@ -22,12 +22,17 @@ public sealed class DailyUsageRepository : IDailyUsageRepository
     }
 
     public Task IncrementTextAsync(int userId, DateOnly usageDate, CancellationToken cancellationToken = default) =>
-        IncrementAsync(userId, usageDate, isText: true, cancellationToken);
+        IncrementAsync(userId, usageDate, Counter.Text, cancellationToken);
 
     public Task IncrementOcrAsync(int userId, DateOnly usageDate, CancellationToken cancellationToken = default) =>
-        IncrementAsync(userId, usageDate, isText: false, cancellationToken);
+        IncrementAsync(userId, usageDate, Counter.Ocr, cancellationToken);
 
-    private async Task IncrementAsync(int userId, DateOnly usageDate, bool isText, CancellationToken cancellationToken)
+    public Task IncrementLessonAsync(int userId, DateOnly usageDate, CancellationToken cancellationToken = default) =>
+        IncrementAsync(userId, usageDate, Counter.Lesson, cancellationToken);
+
+    private enum Counter { Text, Ocr, Lesson }
+
+    private async Task IncrementAsync(int userId, DateOnly usageDate, Counter counter, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
 
@@ -40,18 +45,21 @@ public sealed class DailyUsageRepository : IDailyUsageRepository
             {
                 UserId = userId,
                 UsageDate = usageDate,
-                TextCheckCount = isText ? 1 : 0,
-                OcrCheckCount = isText ? 0 : 1,
+                TextCheckCount = counter == Counter.Text ? 1 : 0,
+                OcrCheckCount = counter == Counter.Ocr ? 1 : 0,
+                LessonCount = counter == Counter.Lesson ? 1 : 0,
                 CreatedAt = now,
                 UpdatedAt = now
             });
         }
         else
         {
-            if (isText)
-                row.TextCheckCount++;
-            else
-                row.OcrCheckCount++;
+            switch (counter)
+            {
+                case Counter.Text: row.TextCheckCount++; break;
+                case Counter.Ocr: row.OcrCheckCount++; break;
+                default: row.LessonCount++; break;
+            }
 
             row.UpdatedAt = now;
             _db.DailyUsages.Update(row);
