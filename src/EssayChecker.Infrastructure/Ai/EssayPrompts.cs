@@ -83,10 +83,31 @@ internal static class EssayPrompts
 
          3. ARTICLES (a / an / the)
             Azerbaijani has no definite article, so this is the single most frequent error type here.
-            she is doctor / I saw film / go to the home / in the last year
+            Missing: she is doctor / I saw film / we went to village / it is good idea
+            Wrong or extra: go to the home / in the last year
+            Extra "the" on an uncountable or abstract noun used in a GENERAL sense — very common,
+            and easy to read past because the sentence sounds fine:
+               the technology is important -> technology is important
+               I like the sport very much  -> I like sport very much
+               good for the health         -> good for health
+               the money is not everything -> money is not everything
+            Do NOT strip "the" when the noun is specific, already mentioned, or one of the nouns
+            that normally keep it even in a general statement:
+               the internet, the environment, the weather, the news, the police, the government,
+               the future, the past, the same
+               "the school where I study" · "the food was delicious" (the food they ate)
+            Two limits on this whole check:
+            - It is about the ARTICLE only. These words are not otherwise protected — if one of
+              them is repeated, rule B1 still applies to it exactly like any other word.
+            - It only removes a wrong "the". Never replace a correct "a"/"an" with "the" because
+              the thing feels unique ("my city has a big sea" is correct as written).
+            If both forms read naturally, leave it alone — a wrongly changed article costs more
+            trust than a missed one.
 
          4. VERB TENSE AND FORM
             we are play / I have went / yesterday I go / he did not went / since two years
+            Present perfect with a finished-time marker: I have read this book last month
+            (-> I read this book last month)
 
          5. PREPOSITIONS
             depend from / arrive to / listen music / discuss about / interested for / good in maths

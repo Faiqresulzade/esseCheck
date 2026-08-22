@@ -1,0 +1,637 @@
+﻿{
+  "model": "openai/gpt-5.6-luna",
+  "summary": {
+    "essays": 10,
+    "totalPlanted": 181,
+    "totalMatched": 170,
+    "recallPercent": 93.9,
+    "totalReported": 170,
+    "totalExtra": 12
+  },
+  "essays": [
+    {
+      "no": 1,
+      "topic": "School",
+      "words": 94,
+      "planted": 18,
+      "matched": 18,
+      "recall": 100,
+      "reported": 19,
+      "extra": 1,
+      "scores": {
+        "total": 2.4,
+        "structure": 0.5,
+        "content": 1,
+        "grammar": 0.4,
+        "vocabulary": 0.5
+      },
+      "stats": {
+        "grammar": 13,
+        "spelling": 4,
+        "vocabulary": 1,
+        "natural": 1
+      },
+      "missed": [],
+      "extraItems": [
+        "In the break time -> During the break (NaturalExpression)"
+      ],
+      "allMistakes": [
+        "I am go -> I went (Grammar)",
+        "school have -> school has (Grammar)",
+        "many student -> many students (Grammar)",
+        "teachers is -> teachers are (Grammar)",
+        "I studies -> I study (Grammar)",
+        "five subject -> five subjects (Grammar)",
+        "write homeworks -> do homework (Vocabulary)",
+        "in evening -> in the evening (Grammar)",
+        "becouse -> because (Spelling)",
+        "In the break time -> During the break (NaturalExpression)",
+        "we plays -> we play (Grammar)",
+        "five friend -> five friends (Grammar)",
+        "we goes -> we go (Grammar)",
+        "librery -> library (Spelling)",
+        "usefull -> useful (Spelling)",
+        "learning but the internet -> learning, but the internet (Grammar)",
+        "However -> However, (Grammar)",
+        "intresting -> interesting (Spelling)",
+        "want study -> want to study (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "94 sözlə minimum 100 söz tələbindən aşağı qaldığın üçün mövzu tam açılmayıb və giriş-nəticə hissələri kifayət qədər inkişaf etməyib.",
+          "Zaman, mübtəda-xəbər uyğunluğu və cəm formalarında çoxsaylı problemlər var: “I am go”, “school have”, “many student” və “we goes”.",
+          "Lüğət əsasən sadə və təkrarlıdır; “the internet” ifadəsinin təkrarı və “write homeworks” birləşməsi ifadə dəqiqliyini zəiflədir."
+        ],
+        "recommendations": [
+          "Mətni ən azı 100 sözə çatdırmaq üçün məktəbin görünüşü, sevdiyin müəllim, dərsdənkənar fəaliyyət və məktəbin gələcək məqsədlərinə təsiri barədə hərəsinə bir-iki cümlə əlavə et; sonunda ayrıca nəticə cümləsi yaz.",
+          "Keçmiş hadisələr üçün past simple formasını təkrar et: “Last year I went to a new school.” Gündəlik vərdişlərdə isə üçüncü şəxsdə -s qaydasını və “I study”, “we play”, “we go” formalarını düzgün tətbiq et.",
+          "Sayılan isimlərdə cəm formasını və subject-verb agreement qaydasını məşq et: “many students”, “five subjects”, “five friends”, “the school has”, “the teachers are”.",
+          "Söz birləşmələrini bütöv şəkildə öyrən: “do homework”, “in the evening” və “during the break”. Həmçinin “because”, “library”, “useful” və “interesting” yazılışlarını yoxla."
+        ]
+      },
+      "correctedEssay": "Last year <b>I am go</b> (I went) to a new school in our city. The <b>school have</b> (school has) <b>many student</b> (many students) and the <b>teachers is</b> (teachers are) very kind. Every day <b>I studies</b> (I study) <b>five subject</b> (five subjects) and I <b>write homeworks</b> (do homework) <b>in evening</b> (in the evening). My favorite subject is history <b>becouse</b> (because) I like old stories. <b>In the break time</b> (During the break) <b>we plays</b> (we play) football with my <b>five friend</b> (five friends). Sometimes <b>we goes</b> (we go) to the <b>librery</b> (library) to read books. The internet is <b>usefull</b> (useful) for <b>learning but the internet</b> (learning, but the internet) can waste time also. <b>However</b> (However,) I think the school life is <b>intresting</b> (interesting) and I <b>want study</b> (want to study) hard for my future."
+    },
+    {
+      "no": 2,
+      "topic": "Family",
+      "words": 98,
+      "planted": 18,
+      "matched": 17,
+      "recall": 94.4,
+      "reported": 17,
+      "extra": 1,
+      "scores": {
+        "total": 2.5,
+        "structure": 0.5,
+        "content": 1,
+        "grammar": 0.5,
+        "vocabulary": 0.5
+      },
+      "stats": {
+        "grammar": 15,
+        "spelling": 2,
+        "vocabulary": 0,
+        "natural": 0
+      },
+      "missed": [
+        "to village"
+      ],
+      "extraItems": [
+        "the primary school -> a primary school (Grammar)"
+      ],
+      "allMistakes": [
+        "have four peoples -> has four people (Grammar)",
+        "father work -> father works (Grammar)",
+        "mother is teacher -> mother is a teacher (Grammar)",
+        "the primary school -> a primary school (Grammar)",
+        "I have one brother, he is -> I have one brother. He is (Grammar)",
+        "more older -> older (Grammar)",
+        "he study -> he studies (Grammar)",
+        "In the weekend -> At the weekend (Grammar)",
+        "we goes -> we go (Grammar)",
+        "for visit -> to visit (Grammar)",
+        "She cook -> She cooks (Grammar)",
+        "we eats -> we eat (Grammar)",
+        "brother always help -> brother always helps (Grammar)",
+        "becuase -> because (Spelling)",
+        "becouse -> because (Spelling)",
+        "they are alway support -> they always support (Grammar)",
+        "I want make -> I want to make (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 98 sözdür və tələb olunan 100 sözdən qısadır; buna görə ailə haqqında fikirlər kifayət qədər inkişaf etdirilməyib və nəticə çox qısa qalıb.",
+          "“My father work”, “he study” və “we eats” kimi feil formalarında şəxs-say uyğunluğu pozulur; bu səhvlər qrammatik dəqiqliyi zəiflədir.",
+          "“I have one brother, he is” cümləsində fikirlər vergüllə birləşdirilib; həmçinin mətn əsasən sadə cümlələrdən ibarətdir.",
+          "“becuase”, “becouse” və “alway” kimi yazılış və söz formaları, eləcə də “more older” ifadəsi dilin düzgünlüyünə təsir edir."
+        ],
+        "recommendations": [
+          "Ailə üzvləri haqqında hər biri üçün bir əlavə detal və konkret nümunə artır: məsələn, atanla nə etdiyini və ailənizin niyə birlikdə vaxt keçirməyi sevdiyini izah et.",
+          "Üçüncü şəxsin təkində feil qaydasını təkrar et: “father works”, “mother cooks”, “brother helps”; “we” ilə isə əsas feil formasından istifadə et: “we go”, “we eat”.",
+          "Artiklləri və məsdər quruluşunu məşq et: “a teacher”, “a primary school”, “to visit”, “want to make”.",
+          "Vergüllə birləşdirilmiş iki müstəqil cümləni ayır: “I have one brother. He is older than me.” Bundan əlavə, “because” və “always” sözlərinin düzgün yazılışını yadda saxla."
+        ]
+      },
+      "correctedEssay": "My family <b>have four peoples</b> (has four people) and we live in a small house near the park. My <b>father work</b> (father works) in a factory and my <b>mother is teacher</b> (mother is a teacher) in <b>the primary school</b> (a primary school). <b>I have one brother, he is</b> (I have one brother. He is) <b>more older</b> (older) than me and <b>he study</b> (he studies) at university. <b>In the weekend</b> (At the weekend) <b>we goes</b> (we go) to village <b>for visit</b> (to visit) my grandmother. <b>She cook</b> (She cooks) very delicious food and <b>we eats</b> (we eat) together in the garden. My <b>brother always help</b> (brother always helps) me with my homework <b>becuase</b> (because) he is clever. I love my family <b>becouse</b> (because) <b>they are alway support</b> (they always support) me. In the future <b>I want make</b> (I want to make) them proud."
+    },
+    {
+      "no": 3,
+      "topic": "Technology",
+      "words": 98,
+      "planted": 20,
+      "matched": 19,
+      "recall": 95,
+      "reported": 20,
+      "extra": 4,
+      "scores": {
+        "total": 2.1,
+        "structure": 0.4,
+        "content": 0.9,
+        "grammar": 0.3,
+        "vocabulary": 0.5
+      },
+      "stats": {
+        "grammar": 19,
+        "spelling": 1,
+        "vocabulary": 0,
+        "natural": 0
+      },
+      "missed": [
+        "Nowadays the technology"
+      ],
+      "extraItems": [
+        "in our life -> in our lives (Grammar)",
+        "message -> messages (Grammar)",
+        "the danger -> the dangers (Grammar)",
+        "the balance is the best way -> balance is the best way (Grammar)"
+      ],
+      "allMistakes": [
+        "in our life -> in our lives (Grammar)",
+        "Many people uses -> Many people use (Grammar)",
+        "for communicate -> to communicate (Grammar)",
+        "The technology help -> Technology helps (Grammar)",
+        "the technology also make -> technology also makes (Grammar)",
+        "peoples -> people (Grammar)",
+        "we sends -> we send (Grammar)",
+        "message -> messages (Grammar)",
+        "Some student -> Some students (Grammar)",
+        "don't reads -> don't read (Grammar)",
+        "becuase -> because (Spelling)",
+        "In my opinion -> In my opinion, (Grammar)",
+        "we must to use -> we must use (Grammar)",
+        "Firstly -> Firstly, (Grammar)",
+        "we should to control -> we should control (Grammar)",
+        "Secondly -> Secondly, (Grammar)",
+        "the danger -> the dangers (Grammar)",
+        "childrens -> children (Grammar)",
+        "Therefore -> Therefore, (Grammar)",
+        "the balance is the best way -> balance is the best way (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 98 sözdür və minimum 100 sözdən qısadır; buna görə fikirlərin inkişafı və strukturun tamlığı zəifləyir. Giriş, əsas hissə və nəticə hiss olunsa da, nəticə çox qısa qalır.",
+          "Feil uyğunluğu, modal fellər və məsdər istifadəsində çoxlu problem var: “Many people uses”, “we sends message” və “we must to use”. Bu səhvlər qrammatik dəqiqliyi ciddi şəkildə azaldır.",
+          "Lüğət əsasən sadədir və “technology” sözü tez-tez təkrarlanır. Bəzi ifadələr daha təbii və dəqiq söz birləşmələri ilə əvəz olunmalıdır."
+        ],
+        "recommendations": [
+          "Növbəti yazıda ən azı 110 söz yaz və hər əsas fikri səbəb və nümunə ilə genişləndir; məsələn, texnologiyanın təhsildə və ünsiyyətdə necə kömək etdiyini ayrıca izah et.",
+          "“Many people”, “some students”, “parents” kimi cəm mübtədalarla feilın əsas formasını işlət: “people use”, “students read”, “parents explain”. “Must”, “should” və “can” modallarından sonra “to” işlətmə: “must use”, “should control”.",
+          "Nəticəni ayrıca abzasda 2-3 cümlə ilə tamamla və “Firstly”, “Secondly”, “Therefore” kimi bağlayıcılardan sonra vergül qoy. Beləliklə, giriş, əsas hissə və nəticə daha aydın görünəcək.",
+          "“Technology is useful for education and communication, but excessive use can reduce productivity” kimi daha müxtəlif və mövzuya uyğun ifadələrdən istifadə et; eyni zamanda “technology” sözünü “digital tools”, “modern devices” və “these inventions” kimi uyğun sözlərlə əvəzlə."
+        ]
+      },
+      "correctedEssay": "Nowadays the technology is very important <b>in our life</b> (in our lives). <b>Many people uses</b> (Many people use) smartphone every day <b>for communicate</b> (to communicate) with friends. <b>The technology help</b> (Technology helps) us to find information quickly, but <b>the technology also make</b> (technology also makes) us lazy. In the past <b>peoples</b> (people) wrote letters and they waited many days, now <b>we sends</b> (we send) <b>message</b> (messages) in one second. <b>Some student</b> (Some students) <b>don't reads</b> (don't read) books <b>becuase</b> (because) they prefer videos. <b>In my opinion</b> (In my opinion,) <b>we must to use</b> (we must use) technology carefully. <b>Firstly</b> (Firstly,) <b>we should to control</b> (we should control) our time. <b>Secondly</b> (Secondly,) parents must explain <b>the danger</b> (the dangers) for <b>childrens</b> (children). <b>Therefore</b> (Therefore,) I think <b>the balance is the best way</b> (balance is the best way) for the modern life."
+    },
+    {
+      "no": 4,
+      "topic": "Sport",
+      "words": 98,
+      "planted": 18,
+      "matched": 18,
+      "recall": 100,
+      "reported": 18,
+      "extra": 1,
+      "scores": {
+        "total": 2.7,
+        "structure": 0.5,
+        "content": 1.2,
+        "grammar": 0.4,
+        "vocabulary": 0.6
+      },
+      "stats": {
+        "grammar": 16,
+        "spelling": 2,
+        "vocabulary": 0,
+        "natural": 0
+      },
+      "missed": [],
+      "extraItems": [
+        "Because -> This is because (Grammar)"
+      ],
+      "allMistakes": [
+        "the sport -> sport (Grammar)",
+        "becouse -> because (Spelling)",
+        "it make -> it makes (Grammar)",
+        "I runs -> I run (Grammar)",
+        "thirty minute -> thirty minutes (Grammar)",
+        "I have joined to -> I joined (Grammar)",
+        "I learn -> I learned (Grammar)",
+        "many new skill -> many new skills (Grammar)",
+        "coach say -> coach says (Grammar)",
+        "every days -> every day (Grammar)",
+        "don't gives -> don't give (Grammar)",
+        "populer -> popular (Spelling)",
+        "many childrens -> many children (Grammar)",
+        "good for the health -> good for health (Grammar)",
+        "it help -> it helps (Grammar)",
+        "Because -> This is because (Grammar)",
+        "advise everybody for start -> advise everybody to start (Grammar)",
+        "dont stop -> don't stop (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 98 sözdür və tələb olunan 100 sözə çatmır; fikirlər paraqraflara bölünmədiyi və nümunələr kifayət qədər inkişaf etdirilmədiyi üçün struktur və məzmun zəifləyir.",
+          "Feil-mübtəda uyğunluğu və qrammatik formalar üzərində işləməlisiniz: \"it make\", \"I runs\", \"coach say\" və \"many childrens\" kimi formalar düzgün deyil.",
+          "Lüğət mövzuya uyğun olsa da, əsasən sadə və təkrarlıdır; \"sport\", \"good\" və \"very\" kimi sözlərin tez-tez işlənməsi ifadənin zənginliyini azaldır."
+        ],
+        "recommendations": [
+          "Mətni üç aydın hissəyə bölün: girişdə idmana münasibətinizi bildirin, əsas hissədə ən azı iki idman növünü və onların faydalarını nümunələrlə izah edin, nəticədə mövqeyinizi ümumiləşdirin.",
+          "Mübtəda–feil uyğunluğu qaydasını təkrarlayın: \"it makes\", \"I run\", \"coach says\", \"it helps\"; cəm isimlərdə də \"minutes\", \"skills\" və \"children\" formalarına diqqət edin.",
+          "Keçmiş zaman və indiki zamanın istifadəsini ayırın: \"Last summer I joined\" və \"I learned\", gündəlik vərdiş üçün isə \"I run\" və \"I practise\" yazın.",
+          "İfadələri daha təbii qurmaq üçün \"good for health\" və \"advise everybody to start\" formalarını məşq edin; həmçinin \"because\" və \"therefore\" kimi bağlayıcılardan düzgün istifadə edin."
+        ]
+      },
+      "correctedEssay": "I like <b>the sport</b> (sport) very much <b>becouse</b> (because) <b>it make</b> (it makes) me strong and happy. Every morning <b>I runs</b> (I run) in the park about <b>thirty minute</b> (thirty minutes). Last summer <b>I have joined to</b> (I joined) the swimming club and <b>I learn</b> (I learned) <b>many new skill</b> (many new skills). My <b>coach say</b> (coach says) that I must practise <b>every days</b> (every day). Sometimes I feel tired but I <b>don't gives</b> (don't give) up. Football is <b>populer</b> (popular) in our country and <b>many childrens</b> (many children) plays it in the street. Doing sport is <b>good for the health</b> (good for health) and <b>it help</b> (it helps) us to sleep better. <b>Because</b> (This is because) sport is very necessary, I <b>advise everybody for start</b> (advise everybody to start) today and <b>dont stop</b> (don't stop)."
+    },
+    {
+      "no": 5,
+      "topic": "City",
+      "words": 98,
+      "planted": 16,
+      "matched": 14,
+      "recall": 87.5,
+      "reported": 15,
+      "extra": 1,
+      "scores": {
+        "total": 2.6,
+        "structure": 0.4,
+        "content": 1.2,
+        "grammar": 0.4,
+        "vocabulary": 0.6
+      },
+      "stats": {
+        "grammar": 11,
+        "spelling": 1,
+        "vocabulary": 2,
+        "natural": 1
+      },
+      "missed": [
+        "in the boulevard",
+        "is very expensive"
+      ],
+      "extraItems": [
+        "a big sea -> a big seaside (Vocabulary)"
+      ],
+      "allMistakes": [
+        "I live in Baku, it is -> I live in Baku. It is (Grammar)",
+        "city are -> city is (Grammar)",
+        "there is many -> there are many (Grammar)",
+        "tourists comes -> tourists come (Grammar)",
+        "many country -> many countries (Grammar)",
+        "city have -> city has (Grammar)",
+        "a big sea -> a big seaside (Vocabulary)",
+        "peoples walk -> people walk (Grammar)",
+        "becouse -> because (Spelling)",
+        "there is too many -> there are too many (Grammar)",
+        "the price of the apartment -> apartment prices (NaturalExpression)",
+        "more cleaner -> cleaner (Grammar)",
+        "more quiet -> quieter (Vocabulary)",
+        "Although the problems -> Despite the problems (Grammar)",
+        "want live -> want to live (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 98 sözdür və tələb olunan minimum 100 sözdən qısadır; bu səbəbdən fikirlərin inkişafı və struktur tamlığı zəifləyib.",
+          "Şəhər haqqında bir çox fikir yalnız sadalanıb. Məsələn, nəqliyyat probleminin nəticələrini və şəhəri daha təmiz etmək üçün konkret həll yollarını izah etməmisiniz.",
+          "“The city are”, “there is many” və “tourists comes” kimi uzlaşma səhvləri, həmçinin “I live in Baku, it is...” cümlə sərhədi xətası qrammatik dəqiqliyi azaldır.",
+          "“a big sea” və “more quiet” ifadələri təbii deyil; eyni zamanda söz ehtiyatı şəhərin xüsusiyyətlərini daha dəqiq və müxtəlif təsvir etmək üçün məhdud qalır."
+        ],
+        "recommendations": [
+          "Girişdən sonra şəhərin görünüşü və gündəlik həyatı barədə bir neçə inkişaf etdirilmiş cümlə, nəticədə isə şəhəri niyə sevdiyinizi və hansı dəyişiklikləri istədiyinizi yazın; beləliklə, ən azı 100 sözü tamamlayın.",
+          "Mübtəda-xəbər uzlaşmasını təkrar edin: “the city is”, “there are many”, “tourists come”, “the city has” və “people walk” formalarını məşq edin.",
+          "Vergül vasitəsilə iki müstəqil cümləni birləşdirməyin: “I live in Baku. It is the capital of Azerbaijan.” kimi cümlə sərhədlərindən istifadə edin. Həmçinin “want to live” və “cleaner/quieter” formalarını təkrar edin.",
+          "Təbii söz birləşmələri öyrənin və cümlələrdə tətbiq edin: “the seaside”, “apartment prices”, “a quieter city”. “Because” sözünün yazılışını da yadda saxlayın."
+        ]
+      },
+      "correctedEssay": "<b>I live in Baku, it is</b> (I live in Baku. It is) the capital of Azerbaijan. The <b>city are</b> (city is) very beautiful and <b>there is many</b> (there are many) old buildings. In the summer the weather is hot and <b>tourists comes</b> (tourists come) from <b>many country</b> (many countries). My <b>city have</b> (city has) <b>a big sea</b> (a big seaside) and <b>peoples walk</b> (people walk) in the boulevard every evening. The traffic is a big problem <b>becouse</b> (because) <b>there is too many</b> (there are too many) cars. Also <b>the price of the apartment</b> (apartment prices) is very expensive. In the future I hope the city will be <b>more cleaner</b> (cleaner) and <b>more quiet</b> (quieter). <b>Although the problems</b> (Despite the problems), I love my city and I don't <b>want live</b> (want to live) in another place."
+    },
+    {
+      "no": 6,
+      "topic": "Holiday",
+      "words": 99,
+      "planted": 14,
+      "matched": 14,
+      "recall": 100,
+      "reported": 13,
+      "extra": 0,
+      "scores": {
+        "total": 3.1,
+        "structure": 0.5,
+        "content": 1.5,
+        "grammar": 0.5,
+        "vocabulary": 0.6
+      },
+      "stats": {
+        "grammar": 9,
+        "spelling": 2,
+        "vocabulary": 0,
+        "natural": 2
+      },
+      "missed": [],
+      "extraItems": [],
+      "allMistakes": [
+        "my family and me -> my family and I (Grammar)",
+        "for the holiday -> on holiday (NaturalExpression)",
+        "near to the beach -> near the beach (NaturalExpression)",
+        "during ten days -> for ten days (Grammar)",
+        "after we swimmed -> after we swam (Grammar)",
+        "My sister buyed -> My sister bought (Grammar)",
+        "delicios -> delicious (Spelling)",
+        "the peoples -> the people (Grammar)",
+        "a old castle -> an old castle (Grammar)",
+        "we takes -> we took (Grammar)",
+        "listened the music -> listened to the music (Grammar)",
+        "the most best -> the best (Grammar)",
+        "becouse -> because (Spelling)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 99 sözdür və tələb olunan 100 sözdən qısadır; əlavə olaraq abzaslar yoxdur, buna görə struktur və fikirlərin inkişafı zəifləyir.",
+          "Hadisələr qeyd olunsa da, onların səbəb və nəticələri geniş izah edilmir; məsələn, niyə “many souvenirs” aldığını və qalanın nə üçün maraqlı olduğunu açıqlamırsan.",
+          "Fel zamanları və formaları üzərində nəzarət zəifdir: “we swimmed”, “My sister buyed” və “we takes” kimi formalar oxunur, lakin qrammatik dəqiqliyi azaldır.",
+          "Söz seçimi və sabit ifadələrə diqqət lazımdır; “for the holiday”, “near to the beach” və “the most best” ifadələri təbii və düzgün istifadə olunmayıb."
+        ],
+        "recommendations": [
+          "Mətni üç aydın hissəyə böl: girişdə səfərin vaxtını və yerini bildir, əsas hissədə ən azı üç fəaliyyəti səbəb və detallarla izah et, nəticədə isə bu tətil barədə fikrini və gələcək planını yaz.",
+          "Keçmiş zamanın düzgün formalarını təkrar et: “swim–swam”, “buy–bought”, “take–took”. Həmçinin keçmişdə davamlı zaman ardıcıllığını qorumaq üçün cümlələrdə bütün əsas felləri uyğun formada işlət.",
+          "Artiklları və önlükləri ayrıca məşq et: “an old castle”, “listen to music”, “for ten days” və “near the beach” kimi nümunələrlə öz cümlələrini qur.",
+          "Müqayisə və üstünlük dərəcələrini təkrar et: “the best” formasından istifadə et, “the most best” demə. Yazını təhvil verməzdən əvvəl “delicious” və “because” kimi tez-tez səhv yazılan sözləri yoxla."
+        ]
+      },
+      "correctedEssay": "Last year <b>my family and me</b> (my family and I) went to Turkey <b>for the holiday</b> (on holiday). We stayed in a hotel <b>near to the beach</b> (near the beach) <b>during ten days</b> (for ten days). Every morning we ate breakfast and <b>after we swimmed</b> (after we swam) in the sea. <b>My sister buyed</b> (My sister bought) many souvenirs for our relatives. The food was <b>delicios</b> (delicious) and <b>the peoples</b> (the people) were very friendly. One day we visited <b>a old castle</b> (an old castle) and <b>we takes</b> (we took) many photos. In the evening we <b>listened the music</b> (listened to the music) and we danced. It was <b>the most best</b> (the best) holiday of my life. Next summer I will go there again <b>becouse</b> (because) I miss this place very much."
+    },
+    {
+      "no": 7,
+      "topic": "Book",
+      "words": 102,
+      "planted": 20,
+      "matched": 16,
+      "recall": 80,
+      "reported": 15,
+      "extra": 0,
+      "scores": {
+        "total": 3.2,
+        "structure": 0.7,
+        "content": 1.5,
+        "grammar": 0.5,
+        "vocabulary": 0.5
+      },
+      "stats": {
+        "grammar": 11,
+        "spelling": 2,
+        "vocabulary": 2,
+        "natural": 0
+      },
+      "missed": [
+        "have read",
+        "builded",
+        "the hope",
+        "Actually it is"
+      ],
+      "extraItems": [],
+      "allMistakes": [
+        "a interesting -> an interesting (Grammar)",
+        "the name of book -> the name of the book (Grammar)",
+        "who live alone -> who lived alone (Grammar)",
+        "in a island -> on an island (Grammar)",
+        "he grow food -> he grew food (Grammar)",
+        "In the begining -> In the beginning (Spelling)",
+        "becouse -> because (Spelling)",
+        "he don't lose -> he didn't lose (Grammar)",
+        "worked hardly -> worked hard (Vocabulary)",
+        "This book learned me -> This book taught me (Vocabulary)",
+        "the person must -> a person must (Grammar)",
+        "recommend this book for -> recommend this book to (Grammar)",
+        "the adventures -> adventures (Grammar)",
+        "one of the best book -> one of the best books (Grammar)",
+        "I have ever readed -> I have ever read (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Giriş, əsas hissə və nəticə ayrıca abzaslarla qurulmadığı üçün mətnin struktur hissələri tam aydın görünmür; “Actually” ilə başlayan son fikir nəticə kimi daha geniş yekunlaşdırıla bilər.",
+          "Kitabın niyə tövsiyə edilməli olduğunu yalnız ümumi şəkildə bildirirsən. “He don't lose the hope” kimi bir hadisəni daha ətraflı izah etmək və konkret nümunə əlavə etmək məzmunu gücləndirərdi.",
+          "Artikl, zaman və fel formalarında bir neçə səhv var; “a interesting”, “he grow food” və “I have ever readed” kimi formalar qrammatik dəqiqliyi azaldır.",
+          "“worked hardly” və “This book learned me” ifadələri təbii leksik seçim deyil; “worked hard” və “This book taught me” kimi ifadələr daha uyğun olardı."
+        ],
+        "recommendations": [
+          "Mətni üç abzasda planlaşdır: birinci abzasda kitabı və müəllifi təqdim et, ikinci abzasda hadisələri və qəhrəmanın çətinliklərini inkişaf etdir, üçüncü abzasda şəxsi fikrini və tövsiyəni yekunlaşdır.",
+          "Kitabı tövsiyə edərkən ən azı iki səbəb və bir konkret nümunə əlavə et; məsələn, qəhrəmanın adada hansı çətinliyi necə həll etdiyini izah et.",
+          "Keçmişdə baş verən hadisələr üçün past simple zamanını sistemli şəkildə işlət: “he lived”, “he built”, “he grew”, “he did not lose” formalarını məşq et.",
+          "Artiklləri və sabit söz birləşmələrini təkrarla: “an interesting book”, “the name of the book”, “on an island”, “recommend this book to students”, “one of the best books I have ever read”."
+        ]
+      },
+      "correctedEssay": "I have read <b>a interesting</b> (an interesting) book last month and <b>the name of book</b> (the name of the book) is Robinson Crusoe. It is about a man <b>who live alone</b> (who lived alone) <b>in a island</b> (on an island) many years. He builded a house and <b>he grow food</b> (he grew food) by himself. <b>In the begining</b> (In the beginning) he was very sad <b>becouse</b> (because) he lost all his friends. But <b>he don't lose</b> (he didn't lose) the hope and he <b>worked hardly</b> (worked hard) every day. <b>This book learned me</b> (This book taught me) that <b>the person must</b> (a person must) never give up. I <b>recommend this book for</b> (recommend this book to) all students who like <b>the adventures</b> (adventures). Actually it is <b>one of the best book</b> (one of the best books) which <b>I have ever readed</b> (I have ever read) in my life."
+    },
+    {
+      "no": 8,
+      "topic": "Food",
+      "words": 100,
+      "planted": 18,
+      "matched": 16,
+      "recall": 88.9,
+      "reported": 18,
+      "extra": 3,
+      "scores": {
+        "total": 2.9,
+        "structure": 0.6,
+        "content": 1.3,
+        "grammar": 0.4,
+        "vocabulary": 0.6
+      },
+      "stats": {
+        "grammar": 13,
+        "spelling": 2,
+        "vocabulary": 0,
+        "natural": 3
+      },
+      "missed": [
+        "every sunday",
+        "eat good"
+      ],
+      "extraItems": [
+        "much water -> a lot of water (NaturalExpression)",
+        "eat healthy food -> eat healthily (NaturalExpression)",
+        "do sport -> exercise (NaturalExpression)"
+      ],
+      "allMistakes": [
+        "for the healthy life -> for a healthy life (Grammar)",
+        "country peoples -> country people (Grammar)",
+        "many kind of dishes -> many kinds of dishes (Grammar)",
+        "My mother cook -> My mother cooks (Grammar)",
+        "all family eat -> the whole family eats (Grammar)",
+        "the fast food -> fast food (Grammar)",
+        "becouse -> because (Spelling)",
+        "it have many fat and sugar -> it has a lot of fat and sugar (Grammar)",
+        "Doctors says -> Doctors say (Grammar)",
+        "should to drink -> should drink (Grammar)",
+        "much water -> a lot of water (NaturalExpression)",
+        "young people prefers -> young people prefer (Grammar)",
+        "chips and cola, this is -> chips and cola. This is (Grammar)",
+        "for they health -> for their health (Grammar)",
+        "Therefore -> Therefore, (Grammar)",
+        "eat healthy food -> eat healthily (NaturalExpression)",
+        "do sport -> exercise (NaturalExpression)",
+        "regulary -> regularly (Spelling)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 100 sözlə tələb olunan uzunluğa çatsa da, fikirlər qısa cümlələrlə sadalanır; giriş, əsas hissə və nəticə paraqrafları aydın ayrılmadığı üçün struktur tam güclü deyil.",
+          "“Doctors says...” və “young people prefers...” kimi cümlələrdə mübtəda-xəbər uyğunluğu, “should to drink” ifadəsində isə modal feldən sonrakı quruluş düzgün deyil.",
+          "“much water”, “eat healthy food” və “do sport” ifadələri anlaşılsa da, təbii ingilis dili baxımından daha uyğun seçimlər tələb edir.",
+          "Sağlam qidalanma barədə mövqeyini bildirmisən, lakin səbəbləri və konkret nümunələri daha geniş izah etməmisən."
+        ],
+        "recommendations": [
+          "Mətni üç paraqrafa böl: girişdə qidanın əhəmiyyətini, əsas hissədə milli yeməklər və fast food-u, nəticədə isə şəxsi seçimlərini yaz. Hər əsas fikri ən azı bir səbəb və ya nümunə ilə inkişaf etdir.",
+          "Mübtəda-xəbər uyğunluğunu təkrar et: “My mother cooks”, “the whole family eats”, “Doctors say” və “young people prefer” kimi formaları məşq et.",
+          "Modal fellərdən sonra “to” işlətmə: “should drink”, “must eat” və “can choose” quruluşlarını cümlələrdə tətbiq et. Həmçinin “a lot of water”, “eat healthily” və “exercise” ifadələrini öyrən.",
+          "Qida mövzusunda daha müxtəlif bağlayıcılardan istifadə et: “for example”, “however”, “because”, “therefore” və “in addition”. Fast food-un sağlamlığa təsirini bir konkret nümunə ilə əsaslandır."
+        ]
+      },
+      "correctedEssay": "Food is very important <b>for the healthy life</b> (for a healthy life). In our <b>country peoples</b> (country people) eat <b>many kind of dishes</b> (many kinds of dishes), for example plov, dolma and kebab. <b>My mother cook</b> (My mother cooks) plov every sunday and <b>all family eat</b> (the whole family eats) together. I don't like <b>the fast food</b> (fast food) <b>becouse</b> (because) <b>it have many fat and sugar</b> (it has a lot of fat and sugar). <b>Doctors says</b> (Doctors say) that we must eat more vegetables and fruits. Also we <b>should to drink</b> (should drink) <b>much water</b> (a lot of water) every day. Some <b>young people prefers</b> (young people prefer) <b>chips and cola, this is</b> (chips and cola. This is) very bad <b>for they health</b> (for their health). <b>Therefore</b> (Therefore,) I try to <b>eat healthy food</b> (eat healthily) and I <b>do sport</b> (exercise) <b>regulary</b> (regularly). If you eat good you will feel good."
+    },
+    {
+      "no": 9,
+      "topic": "Friend",
+      "words": 104,
+      "planted": 19,
+      "matched": 18,
+      "recall": 94.7,
+      "reported": 17,
+      "extra": 0,
+      "scores": {
+        "total": 3.3,
+        "structure": 0.7,
+        "content": 1.5,
+        "grammar": 0.4,
+        "vocabulary": 0.7
+      },
+      "stats": {
+        "grammar": 17,
+        "spelling": 0,
+        "vocabulary": 0,
+        "natural": 0
+      },
+      "missed": [
+        "We are studying"
+      ],
+      "extraItems": [],
+      "allMistakes": [
+        "friend name -> friend's name (Grammar)",
+        "friends since the childhood -> friends since childhood (Grammar)",
+        "very kind boy -> a very kind boy (Grammar)",
+        "helps to me -> helps me (Grammar)",
+        "we sits -> we sit (Grammar)",
+        "He like -> He likes (Grammar)",
+        "the football -> football (Grammar)",
+        "he play -> he plays (Grammar)",
+        "we going -> we go (Grammar)",
+        "in the weekend -> at the weekend (Grammar)",
+        "we plays -> we play (Grammar)",
+        "He never tell -> He never tells (Grammar)",
+        "he keep -> he keeps (Grammar)",
+        "Last month he has helped -> Last month he helped (Grammar)",
+        "In my opinion -> In my opinion, (Grammar)",
+        "the true friend -> a true friend (Grammar)",
+        "the money -> money (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mübtəda-xəbər uzlaşması ilə bağlı səhvlər tez-tez təkrarlanır: “we sits”, “He like”, “he play”, “we going” və “we plays”. Bu, qrammatik dəqiqliyi zəiflədir.",
+          "Artikl, yiyəlik və önlük formalarına diqqət yetirməlisən; “friend name”, “friends since the childhood”, “very kind boy” və “helps to me” kimi ifadələr düzgün qurulmayıb.",
+          "104 söz minimum tələbi ödəsə də, mətn bir abzasda verilib və ayrıca inkişaf etdirilmiş nəticə yoxdur. “True friend” fikrini səbəb və əlavə nümunə ilə genişləndirsən, məzmun və struktur daha güclü olar.",
+          "Söz ehtiyatı əsasən sadədir və dostun keyfiyyətlərini təsvir edən müxtəlif ifadələr azdır; eyni mövzunu daha zəngin sifətlərlə ifadə etmək mümkündür."
+        ],
+        "recommendations": [
+          "İndiki sadə zamanda üçüncü şəxsin təkində felə -s artırılmasını, cəm mübtədalarda isə əsas formanı təkrar et: “He likes/plays/keeps”, lakin “we sit/play/go”.",
+          "Artiklləri və yiyəlik formasını ayrıca məşq et: “a very kind boy”, “my friend’s name”, “a true friend”; “help” felindən sonra “me” işlət: “He helps me”.",
+          "Mətni üç hissəyə böl: girişdə dostunu tanıt, əsas hissədə xarakteri və bir-iki konkret hadisəni izah et, nəticədə dostluğun sənin üçün əhəmiyyətini səbəblə yekunlaşdır.",
+          "“A true friend is valuable because...” quruluşundan istifadə edərək fikrini genişləndir və “kind, honest, loyal, supportive, trustworthy” kimi sözlərlə lüğət ehtiyatını artır."
+        ]
+      },
+      "correctedEssay": "My best <b>friend name</b> (friend's name) is Kamran and we are <b>friends since the childhood</b> (friends since childhood). He is <b>very kind boy</b> (a very kind boy) and he always <b>helps to me</b> (helps me) when I have a problem. We are studying in the same class and <b>we sits</b> (we sit) on the same desk. <b>He like</b> (He likes) <b>the football</b> (football) and <b>he play</b> (he plays) in the school team. Sometimes <b>we going</b> (we go) to the cinema <b>in the weekend</b> (at the weekend) or <b>we plays</b> (we play) computer games. <b>He never tell</b> (He never tells) lie and <b>he keep</b> (he keeps) his promise always. <b>Last month he has helped</b> (Last month he helped) me with mathematics and I got a good mark. <b>In my opinion</b> (In my opinion,) <b>the true friend</b> (a true friend) is more valuable than <b>the money</b> (money)."
+    },
+    {
+      "no": 10,
+      "topic": "Future job",
+      "words": 103,
+      "planted": 20,
+      "matched": 20,
+      "recall": 100,
+      "reported": 18,
+      "extra": 1,
+      "scores": {
+        "total": 3.1,
+        "structure": 0.8,
+        "content": 1.4,
+        "grammar": 0.4,
+        "vocabulary": 0.5
+      },
+      "stats": {
+        "grammar": 14,
+        "spelling": 4,
+        "vocabulary": 0,
+        "natural": 0
+      },
+      "missed": [],
+      "extraItems": [
+        "for the society -> for society (Grammar)"
+      ],
+      "allMistakes": [
+        "When I will finish the school -> When I finish school (Grammar)",
+        "usefull -> useful (Spelling)",
+        "for the society -> for society (Grammar)",
+        "Doctors saves -> Doctors save (Grammar)",
+        "the lifes -> the lives (Spelling)",
+        "they works hardly -> they work hard (Grammar)",
+        "For this reason -> For this reason, (Grammar)",
+        "I must to study -> I must study (Grammar)",
+        "chemistry very good -> chemistry very well (Grammar)",
+        "My parents supports -> My parents support (Grammar)",
+        "they says -> they say (Grammar)",
+        "studing -> studying (Spelling)",
+        "many exercise -> many exercises (Grammar)",
+        "Firstly -> Firstly, (Grammar)",
+        "enter to the medical university -> enter the medical university (Grammar)",
+        "Although it is hard I never -> Although it is hard, I never (Grammar)",
+        "dream becouse -> dream because (Spelling)",
+        "helping people make me -> helping people makes me (Grammar)"
+      ],
+      "feedback": {
+        "weaknesses": [
+          "Mətn 103 sözlə minimum tələbi ödəsə də, məzmunun inkişafı məhduddur: həkimlik peşəsinin nə üçün faydalı olduğunu və gələcəkdə hansı konkret məqsədlərə çatmaq istədiyinizi daha ətraflı izah etməlisiniz.",
+          "“Doctors saves”, “My parents supports” və “they says” kimi nümunələr mübtəda-xəbər uzlaşmasının zəif olduğunu göstərir; “I must to study” kimi feil formalarına da diqqət yetirmək lazımdır.",
+          "“usefull”, “lifes” və “studing” kimi yazılışlar, həmçinin “works hardly” və “chemistry very good” kimi ifadələr dilin dəqiqliyini və təbiiliyini azaldır.",
+          "Mətn bir abzasda verildiyi üçün giriş, əsas hissə və nəticə aydın seçilmir; fikirlər arasında əlaqə olsa da, tam strukturlaşdırılmış yazı təsiri zəifdir."
+        ],
+        "recommendations": [
+          "Yazını üç hissəyə bölün: girişdə həkim olmaq arzunuzu, əsas hissədə səbəbləri və hazırlıq planınızı, nəticədə isə bu peşəyə bağlılığınızı ümumiləşdirin.",
+          "Hər əsas fikri səbəb və konkret nümunə ilə genişləndirin; məsələn, həkimlərin insanlara necə kömək etdiyini və hansı bacarıqları inkişaf etdirmək istədiyinizi izah edin.",
+          "Present Simple zamanı üçün üçüncü şəxsin təkində -s qaydasını təkrarlayın: “Doctors save”, “My parents support”, “they say”. “Must” modal feilindən sonra “to” işlətməyin: “I must study”.",
+          "Söz birləşmələrini lüğətdə nümunələrlə yoxlayın və düzgün formaları yadda saxlayın: “work hard”, “study chemistry very well”, “enter the medical university”.",
+          "Bağlayıcıları və durğu işarələrini düzgün işlədin; xüsusilə “Firstly,” və “For this reason,” kimi girişlərdən sonra vergül qoyun və “Although it is hard, ...” modelindən istifadə edin."
+        ]
+      },
+      "correctedEssay": "<b>When I will finish the school</b> (When I finish school) I want to become a doctor. This profession is very difficult but it is very <b>usefull</b> (useful) <b>for the society</b> (for society). <b>Doctors saves</b> (Doctors save) <b>the lifes</b> (the lives) of people every day and <b>they works hardly</b> (they work hard). <b>For this reason</b> (For this reason,) <b>I must to study</b> (I must study) biology and <b>chemistry very good</b> (chemistry very well). <b>My parents supports</b> (My parents support) my decision and <b>they says</b> (they say) that I can do it. Now I am <b>studing</b> (studying) every evening and I do <b>many exercise</b> (many exercises). <b>Firstly</b> (Firstly,) I will <b>enter to the medical university</b> (enter the medical university), secondly I will work in a hospital. <b>Although it is hard I never</b> (Although it is hard, I never) change my <b>dream becouse</b> (dream because) <b>helping people make me</b> (helping people makes me) happy."
+    }
+  ]
+}
