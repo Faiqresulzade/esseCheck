@@ -190,23 +190,36 @@ touch the daily quota and cost nothing.
 - Group analytics excludes soft-deleted students so the numbers match the visible roster — note this
   differs from `/essay/history?groupId=`, which deliberately still finds their essays.
 
-### Lessons (topic explanations)
+### Lessons (topic explanations) — a SHARED library, not per-user content
 
 `POST /api/lessons` builds a 6-8 slide English lesson (Azerbaijani explanations, English examples)
-plus a 3-question quiz; `GET /api/lessons`, `GET|DELETE /api/lessons/{id}` are free of AI and quota.
-Built to the frontend order in `BACKEND_LESSON_FEATURE.md`.
+plus a 3-question quiz. `GET /api/lessons` lists it, `GET /api/lessons/{id}` reads it — both free of
+AI and quota, and both open to **every** authenticated user, not just the one who created it. There
+is no delete endpoint. Originally built to the frontend order in `BACKEND_LESSON_FEATURE.md`, then
+reshaped into a shared library per an explicit later product decision (2026-08-23): a teacher who
+generates a lesson makes it visible to every other teacher, so nobody burns tokens regenerating a
+topic someone else already paid for.
 
-- Uses its own model (`OpenRouter:LessonModel`, currently `gpt-4o-mini`) and its own daily counter
-  (`DailyUsage.LessonCount`, `PlanPolicy.LessonDailyLimit` = 1/5/unlimited) — **completely separate
-  from the essay limit**, so a Free user gets 1 essay *and* 1 lesson per day.
-- Off-topic requests come back through the same one-call pattern as essays: the AI returns
-  `isEnglishTopic: false` → `422`, nothing persisted, counter untouched. There is no second
-  validation call, so a rejected topic costs one cheap AI call and no quota.
-- **Three-level saving.** (1) The user already has that topic+grade → the existing lesson is
-  returned, no AI *and no quota*. (2) A `LessonTemplate` exists → no AI, but quota is still charged
-  (deliberate, per spec §6). (3) Otherwise generate and cache. The cache key is
-  `NormalizedTopic + Grade + LessonPrompts.Version`, so **bumping `LessonPrompts.Version` after
-  editing the prompt is mandatory** — otherwise every user keeps getting the pre-edit lesson forever.
+- `Lesson` has **no owner in the access-control sense**. `CreatedByUserId` is metadata only (who to
+  credit, `IsMine` in the response) — it is `OnDelete(Restrict)`, not `Cascade`: a shared lesson must
+  outlive the account that made it, so deleting that user is blocked while their lessons still exist
+  (there is currently no admin path to reassign/orphan them if that ever needs to happen).
+- **`(NormalizedTopic, Grade)` is globally unique** — one lesson per topic+grade, period. There is no
+  concept of "my copy" vs "their copy"; `LessonTemplate` (the old per-topic cache table) is gone
+  because the `Lesson` row now serves both roles at once.
+- **Quota logic:** `LessonService.CreateAsync` looks the topic up first. Found → return it, no AI
+  call, no quota touched (this is the whole point — token cost is what's being avoided). Not found →
+  check the daily counter, call the AI, and only charge the counter *after* the row is actually
+  inserted. `PlanPolicy.LessonDailyLimit` is tiered by plan (1/1/2/4, see "Subscriptions" below), but
+  the limit is never about rationing lesson *access* — that stays unlimited for everyone via the
+  library — only about how many brand-new topics a plan may generate per day.
+- **Race handled, not ignored:** if two users submit the same new topic at once, the DB's unique
+  index will reject the loser's insert. `LessonService` catches that specific Postgres error
+  (matched by index name, `IsDuplicateTopic`), re-fetches the winner's row, and returns it as a
+  normal "already in library" result — the loser's quota is *not* charged, so a race never costs a
+  user their one daily generation for nothing.
+- `request.Grade` is **required** now (`[Required]` on `CreateLessonRequest`) — there is no student
+  card to infer it from anymore, since lessons dropped `StudentId` entirely (see below).
 - `LessonContentMapper` deliberately does *not* repair slide/quiz counts (the product decision was
   "return what the AI gave"). It only guarantees every field is present (null/empty array), drops
   a quiz question whose `correctIndex` falls outside its own `options` (such a question would mark
@@ -216,14 +229,27 @@ Built to the frontend order in `BACKEND_LESSON_FEATURE.md`.
   hash of the question text plus the question's position, so it is deterministic (never `Random`,
   never `string.GetHashCode`, which is per-process randomised) and a cached template can never
   disagree with the lessons copied from it. Options containing "above"/"yuxarıdakı" are left alone.
+- Uses its own model (`OpenRouter:LessonModel`, currently `gpt-4o-mini`), separate from the essay
+  model — switching it is a config-only change.
 - Slides and quiz are nested JSON columns (`OwnsMany(...).ToJson()` with owned collections inside);
   verified to round-trip losslessly including `comparison` and `examples`.
-- **Measured 2026-08-22 with `gpt-4o-mini`:** structure is reliable (7 slides in the right order,
-  all `highlight` values were literal substrings, 3×4 quiz options, correct 422/429/404 behaviour),
-  but content quality is mediocre: the index-0 problem is now fixed in code (see above), yet the
-  Grade9/Grade11 difference remains weak (703 vs 975 characters of explanation, near-identical
-  examples) and summary points tend toward the generic. Switching `LessonModel` is a config-only
-  change if this matters more later.
+- **Prompt depth, measured 2026-08-22 → fixed 2026-08-23:** the first version of the prompt produced
+  bodies of only ~100-150 characters per slide — one throwaway sentence, no real teaching content.
+  `LessonPrompts.Rules` now requires 5-8 sentences per Intro/Rule body (why the rule exists, how it
+  differs from what Azerbaijani would suggest, one exception if there is one), which measured out at
+  ~450-550 characters per slide with actual substance. `LessonPrompts.Version` was bumped 1 → 2 for
+  this edit — **always bump it when `Rules` changes**, since a lesson already in the library is never
+  regenerated just because the prompt got better; the version field is informational only (there is
+  no auto-invalidation), so an old prompt version sitting in the library is a signal to regenerate by
+  hand, not something the system fixes on its own.
+- The `ReshapeLessonsIntoSharedLibrary` migration was **hand-edited** after scaffolding: EF's
+  auto-generated version renamed the `UserId` column straight to `PromptVersion` and added
+  `CreatedByUserId` with `defaultValue: 0` — which would have silently discarded who created each
+  existing lesson (and then failed outright, since the new FK requires a real `AspNetUsers.Id` and
+  `0` isn't one). Fixed by adding `CreatedByUserId` first, copying `UserId`'s value into it with raw
+  SQL, and only then dropping the old columns. If you ever re-scaffold a migration that renames a
+  column EF also wants to repurpose, read the generated SQL before trusting it — the "may result in
+  data loss" warning during `migrations add` is not decorative.
 
 ### Error response conventions (see POSTMAN_DOCS.md §1.6 for full detail)
 
@@ -243,8 +269,41 @@ blocked.
 
 ### Subscriptions
 
-Plans: `Free` (1 essay/day, no OCR), `Pro` (unlimited text, no OCR), `ProPlus` (unlimited text + OCR).
-Lessons have their own separate daily allowance on top of this (see above).
+Four plans, all rules centralised in `PlanPolicy` (`SubscriptionPlan` enum: `Free`, `Pro`, `ProPlus`,
+`Premium`). OCR and text checks share one counter — there is no OCR-specific plan gate anywhere in
+the code, only the shared daily total.
+
+| Plan | Essays/day (`DailyLimit`) | Lessons/day (`LessonDailyLimit`) |
+|---|---|---|
+| Free | 1 | 1 |
+| Pro | 10 | 1 |
+| ProPlus | 20 | 2 |
+| Premium | 40 | 4 |
+
+**None of these are `null`/truly unlimited anymore** — that changed 2026-08-23. `ProPlus` used to be
+literal unlimited essays; it is now capped at 20/day, a real behaviour change for any already-paying
+ProPlus subscriber. `Premium`'s 40/day is deliberately marketed to users as "limitsiz esse yoxlama"
+while the backend enforces a real fair-use number — the cap was sized from measured real OpenRouter
+cost (`gpt-5.6-luna`, ~$0.0083/essay in Aug 2026: two calls, detection + scoring) so that even a user
+who hits it every single day for a month stays inside the plan's calculated cost floor. If you ever
+raise these numbers, re-derive them from current per-call cost, not from the old ones — model pricing
+and prompt length both drift.
+
+Lesson limits are tiered too now (used to be flat 1/day for every plan) — see `PlanPolicy` for why
+this still doesn't touch the shared-library reasoning: the counter limits new *generation*, not
+reading. `LessonPrompts`-cost was measured separately (`gpt-4o-mini`, ~$0.0011/lesson).
+
+`PlanCatalog`'s `Price`/`Currency` fields are **display-only placeholders**, not the real Google Play
+charge — the actual amount is configured per-region directly in Play Console and this backend has no
+way to read it back. `GooglePlaySettings:Products` (a `productId → SubscriptionPlan` dictionary, e.g.
+`"pro_monthly": "Pro"`) is what actually matters for real purchases — an unmapped Play Console product
+ID fails purchase verification with "Naməlum Google Play məhsulu", so **any new Play Console product
+must be added here or its purchases can never be verified**. The `"premium"` key specifically maps to
+the Play Console subscription whose *product ID* is `premium` — note its display *name* in Play
+Console was set to `premium_monthly`, the reverse of the `pro_monthly`/`pro_plus_monthly` naming
+pattern; double-check this against Play Console if purchase verification for Premium ever fails with
+an "unknown product" error.
+
 `SubscriptionController` supports manual/test plan assignment (`/subscribe`) plus real Google Play
 Billing (`/google/verify` validates a purchase server-side against the Google Play Developer API;
 `/google/rtdn` is the Pub/Sub push webhook for Google-initiated subscription state changes, secured

@@ -3,28 +3,38 @@ using EssayChecker.Domain.Enums;
 namespace EssayChecker.Domain.Entities.Lessons;
 
 /// <summary>
-/// İstifadəçinin saxladığı bir dərs. Məzmun keşdən gəlsə belə hər istifadəçi üçün ayrıca sətir
-/// yazılır — dərs onun öz siyahısında görünməli və silinə bilməlidir.
+/// Bir mövzu izahı — ORTAQ kitabxananın sətri, istifadəçiyə aid deyil.
+///
+/// Bir mövzu+sinif cütü üçün yalnız BİR dərs mövcud olur (unikal indeks) və onu bütün müəllimlər
+/// görür. Səbəb xərcdir: eyni mövzunu hər müəllim üçün yenidən yaratmaq token israfıdır.
+/// <see cref="CreatedByUserId"/> yalnız "bunu kim yaratdı" məlumatıdır — sahiblik hüququ vermir,
+/// dərs silinmir (bax LessonsController).
 /// </summary>
 public class Lesson
 {
     public int Id { get; set; }
 
-    public int UserId { get; set; }
+    /// <summary>Dərsi ilk dəfə yaradan (gündəlik limiti xərcləyən) istifadəçi.</summary>
+    public int CreatedByUserId { get; set; }
 
-    /// <summary>Dərs hansı şagird üçün qeyd olunub (opsional) — yalnız etiket/filtr məqsədilə.</summary>
-    public int? StudentId { get; set; }
-
-    /// <summary>İstifadəçinin yazdığı mövzu (göründüyü kimi saxlanılır).</summary>
+    /// <summary>Yaradanın yazdığı mövzu (göründüyü kimi saxlanılır).</summary>
     public string Topic { get; set; } = null!;
 
     /// <summary>
-    /// Normallaşdırılmış mövzu (kiçik hərf, artıq boşluqlar təmizlənmiş). Eyni mövzunun təkrar
-    /// soruşulduğunu tapmaq üçündür — bax LessonTopicKey.
+    /// Normallaşdırılmış mövzu (kiçik hərf, artıq boşluqlar təmizlənmiş) — kitabxanada eyni
+    /// mövzunun təkrar yaradılmasının qarşısını alan açar. Bax LessonTopicKey.
     /// </summary>
     public string NormalizedTopic { get; set; } = null!;
 
     public GradeLevel Grade { get; set; }
+
+    /// <summary>
+    /// Bu məzmun hansı prompt versiyası ilə yaradılıb (bax LessonPrompts.Version).
+    /// QƏSDƏN avtomatik köhnəlmə yoxdur: versiya artanda mövcud dərs yenidən yaradılmır, çünki
+    /// bu, mövzunu yazan müəllimin yeganə gündəlik limitini onsuz da mövcud olan dərsə xərcləyərdi.
+    /// Sahə köhnə dərsləri görüb məqsədli şəkildə təmizləmək üçündür.
+    /// </summary>
+    public int PromptVersion { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

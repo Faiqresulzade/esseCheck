@@ -22,39 +22,31 @@ public sealed class LessonRepository : ILessonRepository
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<Lesson?> GetByIdAsync(int userId, int lessonId, CancellationToken cancellationToken = default) =>
+    public Task<Lesson?> GetByIdAsync(int lessonId, CancellationToken cancellationToken = default) =>
         _db.Lessons
             .AsNoTracking()
-            .FirstOrDefaultAsync(l => l.Id == lessonId && l.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(l => l.Id == lessonId, cancellationToken);
 
-    public Task<Lesson?> FindOwnAsync(
-        int userId, string normalizedTopic, GradeLevel grade, CancellationToken cancellationToken = default) =>
+    public Task<Lesson?> FindByTopicAsync(
+        string normalizedTopic, GradeLevel grade, CancellationToken cancellationToken = default) =>
         _db.Lessons
             .AsNoTracking()
-            .Where(l => l.UserId == userId && l.NormalizedTopic == normalizedTopic && l.Grade == grade)
-            .OrderByDescending(l => l.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(l => l.NormalizedTopic == normalizedTopic && l.Grade == grade, cancellationToken);
 
-    public async Task<LessonHistoryResponse> GetHistoryAsync(
-        int userId, string? search, int? studentId, int? groupId, int page, int pageSize,
+    public async Task<LessonHistoryResponse> GetLibraryAsync(
+        int currentUserId, string? search, GradeLevel? grade, bool onlyMine, int page, int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _db.Lessons
-            .AsNoTracking()
-            .Where(l => l.UserId == userId);
+        var query = _db.Lessons.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(l => l.Topic.Contains(search));
 
-        if (studentId is not null)
-            query = query.Where(l => l.StudentId == studentId);
+        if (grade is not null)
+            query = query.Where(l => l.Grade == grade);
 
-        // Qrup filtri: silinmiş şagirdlər də daxildir — esse tarixçəsindəki eyni davranış.
-        if (groupId is not null)
-        {
-            query = query.Where(l => _db.Students
-                .Any(s => s.Id == l.StudentId && s.GroupId == groupId && s.Group.TeacherId == userId));
-        }
+        if (onlyMine)
+            query = query.Where(l => l.CreatedByUserId == currentUserId);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -66,11 +58,11 @@ public sealed class LessonRepository : ILessonRepository
                 l.Id,
                 l.Topic,
                 l.Grade,
-                l.StudentId,
-                _db.Students
-                    .Where(s => s.Id == l.StudentId)
-                    .Select(s => s.FullName)
-                    .FirstOrDefault(),
+                _db.Users
+                    .Where(u => u.Id == l.CreatedByUserId)
+                    .Select(u => u.FullName)
+                    .FirstOrDefault() ?? string.Empty,
+                l.CreatedByUserId == currentUserId,
                 l.Slides.Count,
                 l.CreatedAt))
             .ToListAsync(cancellationToken);
@@ -80,36 +72,10 @@ public sealed class LessonRepository : ILessonRepository
         return new LessonHistoryResponse(items, totalCount, page, pageSize, totalPages);
     }
 
-    public async Task<bool> DeleteAsync(int userId, int lessonId, CancellationToken cancellationToken = default)
-    {
-        var affected = await _db.Lessons
-            .Where(l => l.Id == lessonId && l.UserId == userId)
-            .ExecuteDeleteAsync(cancellationToken);
-
-        return affected > 0;
-    }
-
-    public Task<LessonTemplate?> FindTemplateAsync(
-        string normalizedTopic, GradeLevel grade, int promptVersion, CancellationToken cancellationToken = default) =>
-        _db.LessonTemplates
+    public Task<string?> GetCreatorNameAsync(int userId, CancellationToken cancellationToken = default) =>
+        _db.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(
-                t => t.NormalizedTopic == normalizedTopic && t.Grade == grade && t.PromptVersion == promptVersion,
-                cancellationToken);
-
-    public async Task AddTemplateAsync(LessonTemplate template, CancellationToken cancellationToken = default)
-    {
-        _db.LessonTemplates.Add(template);
-
-        try
-        {
-            await _db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            // İki istifadəçi eyni mövzunu eyni anda soruşsa unikal indeks pozula bilər. Keşin
-            // yazıla bilməməsi istifadəçi üçün xəta deyil — dərsi onsuz da almış olur.
-            _db.Entry(template).State = EntityState.Detached;
-        }
-    }
+            .Where(u => u.Id == userId)
+            .Select(u => u.FullName)
+            .FirstOrDefaultAsync(cancellationToken);
 }

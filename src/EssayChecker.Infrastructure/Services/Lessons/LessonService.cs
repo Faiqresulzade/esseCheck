@@ -4,32 +4,34 @@ using EssayChecker.Application.Lessons;
 using EssayChecker.Domain.Entities.Lessons;
 using EssayChecker.Domain.Enums;
 using EssayChecker.Infrastructure.Ai;
+using Microsoft.Extensions.Logging;
 
 namespace EssayChecker.Infrastructure.Services.Lessons;
 
 /// <summary>
-/// Dərs axını. Üç mərhələli qənaət:
-/// 1. İstifadəçinin öz siyahısında bu mövzu varsa — hazır dərs qaytarılır, nə AI, nə limit.
-/// 2. Keşdə (başqasının yaratdığı) şablon varsa — AI çağırılmır, amma limit xərclənir.
-/// 3. Yalnız qalan halda AI çağırılır.
+/// Ortaq dərs kitabxanası.
+///
+/// Əsas qayda: gündəlik limit yalnız REAL AI xərcini məhdudlaşdırır. Mövzu kitabxanada varsa
+/// (kim yaradıbsa fərqi yoxdur) dərs pulsuz açılır — nə AI çağırılır, nə sayğac artır. Limit
+/// yalnız kitabxanada olmayan yeni mövzu üçün tutulur.
 /// </summary>
 public sealed class LessonService : ILessonService
 {
     private readonly ILessonRepository _lessons;
     private readonly ILessonGenerator _generator;
     private readonly IUsageLimitService _usageLimit;
-    private readonly ITeachingRepository _teaching;
+    private readonly ILogger<LessonService> _logger;
 
     public LessonService(
         ILessonRepository lessons,
         ILessonGenerator generator,
         IUsageLimitService usageLimit,
-        ITeachingRepository teaching)
+        ILogger<LessonService> logger)
     {
         _lessons = lessons;
         _generator = generator;
         _usageLimit = usageLimit;
-        _teaching = teaching;
+        _logger = logger;
     }
 
     public async Task<CreateLessonResult> CreateAsync(
@@ -38,99 +40,97 @@ public sealed class LessonService : ILessonService
         var topic = request.Topic.Trim();
         var normalizedTopic = LessonTopicKey.Normalize(topic);
 
-        // 1. Bu mövzu artıq istifadəçinin siyahısındadır? Dublikat yaratmırıq, limit də toxunmuruq.
-        var existing = await _lessons.FindOwnAsync(userId, normalizedTopic, grade, cancellationToken);
+        // 1. Kitabxanada var? Onda pulsuzdur — istifadəçi onsuz da siyahıdan açıb oxuya bilərdi.
+        var existing = await _lessons.FindByTopicAsync(normalizedTopic, grade, cancellationToken);
         if (existing is not null)
-            return CreateLessonResult.Reused(await ToResponseAsync(existing, cancellationToken));
+            return CreateLessonResult.AlreadyInLibrary(await ToResponseAsync(existing, userId, cancellationToken));
 
         var decision = await _usageLimit.CheckLessonAsync(userId, cancellationToken);
         if (!decision.Allowed)
             return CreateLessonResult.LimitExceeded(decision.Reason ?? "Bugünkü dərs limitiniz bitib.");
 
-        // 2. Keş: eyni mövzu+sinif+prompt versiyası üçün hazır məzmun.
-        var template = await _lessons.FindTemplateAsync(
-            normalizedTopic, grade, LessonPrompts.Version, cancellationToken);
-
-        List<LessonSlide> slides;
-        List<LessonQuizQuestion> quiz;
-        var displayTopic = topic;
-
-        if (template is not null)
+        // 2. Yalnız burada AI çağırılır. Mövzu uyğun deyilsə heç nə saxlanmır və sayğac artmır.
+        var generated = await _generator.GenerateAsync(topic, grade, cancellationToken);
+        if (!generated.IsEnglishTopic)
         {
-            slides = LessonMapper.ToEntity(LessonMapper.ToDto(template.Slides));
-            quiz = LessonMapper.ToEntity(LessonMapper.ToDto(template.Quiz));
-            displayTopic = template.Topic;
-        }
-        else
-        {
-            // 3. AI. Mövzu uyğun deyilsə heç nə saxlanmır və sayğac artırılmır.
-            var generated = await _generator.GenerateAsync(topic, grade, cancellationToken);
-            if (!generated.IsEnglishTopic)
-            {
-                return CreateLessonResult.InvalidTopic(
-                    "Bu mövzu İngilis dili dərsinə aid deyil. İngilis dili ilə bağlı mövzu yazın.");
-            }
-
-            slides = LessonMapper.ToEntity(generated.Slides);
-            quiz = LessonMapper.ToEntity(generated.Quiz);
-
-            await _lessons.AddTemplateAsync(new LessonTemplate
-            {
-                NormalizedTopic = normalizedTopic,
-                Topic = topic,
-                Grade = grade,
-                PromptVersion = LessonPrompts.Version,
-                CreatedAt = DateTime.UtcNow,
-                Slides = LessonMapper.ToEntity(generated.Slides),
-                Quiz = LessonMapper.ToEntity(generated.Quiz)
-            }, cancellationToken);
+            return CreateLessonResult.InvalidTopic(
+                "Bu mövzu İngilis dili dərsinə aid deyil. İngilis dili ilə bağlı mövzu yazın.");
         }
 
         var lesson = new Lesson
         {
-            UserId = userId,
-            StudentId = request.StudentId,
-            Topic = displayTopic,
+            CreatedByUserId = userId,
+            Topic = topic,
             NormalizedTopic = normalizedTopic,
             Grade = grade,
+            PromptVersion = LessonPrompts.Version,
             CreatedAt = DateTime.UtcNow,
-            Slides = slides,
-            Quiz = quiz
+            Slides = LessonMapper.ToEntity(generated.Slides),
+            Quiz = LessonMapper.ToEntity(generated.Quiz)
         };
 
-        await _lessons.AddAsync(lesson, cancellationToken);
+        try
+        {
+            await _lessons.AddAsync(lesson, cancellationToken);
+        }
+        catch (Exception ex) when (IsDuplicateTopic(ex))
+        {
+            // İki istifadəçi eyni mövzunu eyni anda yazsa unikal indeks pozula bilər. Bu, xəta
+            // deyil: rəqib artıq eyni dərsi yaradıb, onu qaytarırıq və limiti TUTMURUQ.
+            _logger.LogInformation(
+                "Dərs paralel olaraq başqa istifadəçi tərəfindən yaradılıb, mövcud olan qaytarılır: {Topic} ({Grade}).",
+                normalizedTopic, grade);
 
-        // Sayğac yalnız dərs həqiqətən saxlandıqdan sonra artır — keşdən gəlsə də artır (§6).
+            var winner = await _lessons.FindByTopicAsync(normalizedTopic, grade, cancellationToken);
+            if (winner is not null)
+                return CreateLessonResult.AlreadyInLibrary(await ToResponseAsync(winner, userId, cancellationToken));
+
+            throw;
+        }
+
+        // Sayğac yalnız kitabxanaya HƏQİQƏTƏN yeni dərs əlavə olunduqdan sonra artır.
         await _usageLimit.ConsumeLessonAsync(userId, cancellationToken);
 
-        return CreateLessonResult.Created(await ToResponseAsync(lesson, cancellationToken));
+        return CreateLessonResult.Created(await ToResponseAsync(lesson, userId, cancellationToken));
     }
 
-    public Task<LessonHistoryResponse> GetHistoryAsync(
-        int userId, string? search, int? studentId, int? groupId, int page, int pageSize,
+    public Task<LessonHistoryResponse> GetLibraryAsync(
+        int userId, string? search, GradeLevel? grade, bool onlyMine, int page, int pageSize,
         CancellationToken cancellationToken = default) =>
-        _lessons.GetHistoryAsync(userId, search, studentId, groupId, page, pageSize, cancellationToken);
+        _lessons.GetLibraryAsync(userId, search, grade, onlyMine, page, pageSize, cancellationToken);
 
     public async Task<LessonResponse?> GetByIdAsync(
         int userId, int lessonId, CancellationToken cancellationToken = default)
     {
-        var lesson = await _lessons.GetByIdAsync(userId, lessonId, cancellationToken);
-        return lesson is null ? null : await ToResponseAsync(lesson, cancellationToken);
+        // Sahiblik yoxlanmır: kitabxana ortaqdır, hər dərsi hər kəs oxuya bilər.
+        var lesson = await _lessons.GetByIdAsync(lessonId, cancellationToken);
+        return lesson is null ? null : await ToResponseAsync(lesson, userId, cancellationToken);
     }
 
-    public Task<bool> DeleteAsync(int userId, int lessonId, CancellationToken cancellationToken = default) =>
-        _lessons.DeleteAsync(userId, lessonId, cancellationToken);
+    private async Task<LessonResponse> ToResponseAsync(Lesson lesson, int currentUserId, CancellationToken cancellationToken)
+    {
+        var createdByName = await _lessons.GetCreatorNameAsync(lesson.CreatedByUserId, cancellationToken);
+        return LessonMapper.ToResponse(lesson, createdByName ?? string.Empty, lesson.CreatedByUserId == currentUserId);
+    }
 
     /// <summary>
-    /// Şagirdin adı sahiblik yoxlaması olmadan oxunur — dərs onsuz da istifadəçinindir, şagird
-    /// isə sonradan silinmiş ola bilər (adı tarixçədə qalmalıdır).
+    /// Unikal indeks pozuntusunu tanıyır. Npgsql-ə birbaşa istinad etməmək üçün istisna zənciri
+    /// mətnə görə yoxlanılır — Infrastructure qatı konkret verilənlər bazası sürücüsündən asılı olmamalıdır.
     /// </summary>
-    private async Task<LessonResponse> ToResponseAsync(Lesson lesson, CancellationToken cancellationToken)
+    private static bool IsDuplicateTopic(Exception ex)
     {
-        var studentName = lesson.StudentId is null
-            ? null
-            : await _teaching.GetStudentNameAsync(lesson.StudentId.Value, cancellationToken);
+        for (var e = ex; e is not null; e = e.InnerException!)
+        {
+            if (e.GetType().Name.Contains("Postgres", StringComparison.Ordinal) &&
+                e.Message.Contains("IX_Lessons_NormalizedTopic_Grade", StringComparison.Ordinal))
+            {
+                return true;
+            }
 
-        return LessonMapper.ToResponse(lesson, studentName);
+            if (e.InnerException is null)
+                break;
+        }
+
+        return false;
     }
 }

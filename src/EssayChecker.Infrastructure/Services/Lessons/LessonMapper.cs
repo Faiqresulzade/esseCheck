@@ -41,13 +41,13 @@ internal static class LessonMapper
             Explanation = q.Explanation
         }).ToList();
 
-    public static LessonResponse ToResponse(Lesson lesson, string? studentName) =>
+    public static LessonResponse ToResponse(Lesson lesson, string createdByName, bool isMine) =>
         new(
             lesson.Id,
             lesson.Topic,
             lesson.Grade,
-            lesson.StudentId,
-            studentName,
+            createdByName,
+            isMine,
             lesson.CreatedAt,
             ToDto(lesson.Slides),
             ToDto(lesson.Quiz));

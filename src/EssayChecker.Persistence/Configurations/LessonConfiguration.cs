@@ -26,42 +26,31 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
 
         builder.Property(l => l.CreatedAt).IsRequired();
 
+        // Yaradan hesab silinsə dərs kitabxanada QALMALIDIR — o, artıq ortaq resursdur və başqa
+        // müəllimlər ondan istifadə edir. Ona görə Cascade deyil, Restrict.
         builder.HasOne<AppUser>()
             .WithMany()
-            .HasForeignKey(l => l.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey(l => l.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-        // Şagird bazadan tam silinsə dərs itməsin — esselərdəki eyni prinsip.
-        builder.HasOne<Domain.Entities.Teaching.Student>()
-            .WithMany()
-            .HasForeignKey(l => l.StudentId)
-            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(l => l.CreatedByUserId);
 
-        builder.HasIndex(l => l.UserId);
-
-        builder.HasIndex(l => l.StudentId)
-            .HasFilter("\"StudentId\" IS NOT NULL");
-
-        // "Bu istifadəçi bu mövzunu artıq soruşub?" sorğusu — təkrar yaradılışın qarşısını alır.
-        builder.HasIndex(l => new { l.UserId, l.NormalizedTopic, l.Grade });
+        // Kitabxananın əsas qaydası: bir mövzu+sinif = bir dərs. Təkrar yaradılış həm token
+        // israfıdır, həm də siyahıda dublikat göstərər.
+        builder.HasIndex(l => new { l.NormalizedTopic, l.Grade })
+            .IsUnique();
 
         // Slayd və test məzmunu JSON sütunlardır: bütöv oxunub-yazılır, daxili sahələrə görə
         // heç vaxt sorğu getmir (esse Mistakes/Feedback ilə eyni yanaşma).
-        builder.OwnsMany(l => l.Slides, ConfigureSlides);
-        builder.OwnsMany(l => l.Quiz, ConfigureQuiz);
-    }
+        builder.OwnsMany(l => l.Slides, slides =>
+        {
+            slides.ToJson();
+            slides.Property(s => s.Type).HasConversion<string>();
+            slides.OwnsMany(s => s.Examples);
+            slides.OwnsMany(s => s.Mistakes);
+            slides.OwnsOne(s => s.Comparison);
+        });
 
-    internal static void ConfigureSlides<T>(OwnedNavigationBuilder<T, LessonSlide> slides) where T : class
-    {
-        slides.ToJson();
-        slides.Property(s => s.Type).HasConversion<string>();
-        slides.OwnsMany(s => s.Examples);
-        slides.OwnsMany(s => s.Mistakes);
-        slides.OwnsOne(s => s.Comparison);
-    }
-
-    internal static void ConfigureQuiz<T>(OwnedNavigationBuilder<T, LessonQuizQuestion> quiz) where T : class
-    {
-        quiz.ToJson();
+        builder.OwnsMany(l => l.Quiz, quiz => quiz.ToJson());
     }
 }

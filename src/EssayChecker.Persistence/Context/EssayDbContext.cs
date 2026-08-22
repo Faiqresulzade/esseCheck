@@ -40,8 +40,6 @@ public class EssayDbContext
 
     public DbSet<Lesson> Lessons => Set<Lesson>();
 
-    public DbSet<LessonTemplate> LessonTemplates => Set<LessonTemplate>();
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

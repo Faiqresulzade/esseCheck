@@ -12,7 +12,7 @@ internal static class LessonPrompts
     /// Keş açarının bir hissəsi. <see cref="Rules"/> DƏYİŞDİRİLDİKDƏ MÜTLƏQ ARTIRILMALIDIR —
     /// əks halda köhnə promptla yaradılmış dərslər əbədi olaraq keşdən qaytarılmağa davam edər.
     /// </summary>
-    public const int Version = 1;
+    public const int Version = 2;
 
     public const string Rules = """
         You write short, visual English lessons for Azerbaijani secondary-school students. The app
@@ -68,10 +68,23 @@ internal static class LessonPrompts
 
         "title" is required on every slide, is in Azerbaijani, and is never empty.
 
+        DEPTH: a slide is a mini-lesson, not a caption. A one-line "bu mövzu vacibdir" body is a
+        FAILURE even if it is grammatically fine — it teaches nothing. Every body must contain real,
+        specific information: the reasoning behind the rule, a concrete situation where the student
+        will need it, a nuance or exception, or a comparison to what the student would wrongly guess
+        from Azerbaijani. If you cannot say something concrete, you have not thought about the topic
+        enough — think harder, do not pad with generic filler.
+
         --- Field rules ---
-        body        1-3 sentences. Explain, do not list. No bullet characters.
+        body        Intro and Rule: 5-8 sentences (roughly 400-700 Azerbaijani characters). Do not
+                    just state the rule — walk the student through it: why it exists, how it differs
+                    from what Azerbaijani would suggest, when exactly to use it, and one exception or
+                    edge case if the topic has one. Weave in a short illustrative phrase where it
+                    helps, but full example sentences still belong on the Examples slide, not here.
+                    Write in short paragraphs of full sentences, never a bare list.
         formula     A single short pattern, e.g. "have / has + V3" or "was / were + V3". Rule slide
-                    only. Keep it under 40 characters.
+                    only. Keep it under 40 characters — this is a quick visual anchor, the explanation
+                    itself lives in "body".
         keywords    At most 8 single words or very short phrases, in English — the signal words a
                     student should recognise (e.g. already, yet, since, for). Rule slide only.
         examples    2 to 4 items per Examples slide.
@@ -83,15 +96,18 @@ internal static class LessonPrompts
                             "en" (same words, same order, same capitalisation). If you cannot copy it
                             exactly, use null.
         mistakes    At most 3 items. "wrong" is the incorrect English form a student would write,
-                    "correct" is the fixed version of the SAME sentence, "note" is one Azerbaijani
-                    sentence naming the rule that was broken. Use real learner errors, especially
-                    ones caused by Azerbaijani (missing articles, wrong tense after a past time
-                    marker, calques).
+                    "correct" is the fixed version of the SAME sentence, "note" is 1-2 Azerbaijani
+                    sentences naming the rule that was broken AND why an Azerbaijani speaker tends to
+                    make exactly this error — not just "bu səhvdir", explain the mechanism. Use real
+                    learner errors, especially ones caused by Azerbaijani (missing articles, wrong
+                    tense after a past time marker, calques).
         comparison  Two columns. leftTitle/rightTitle are the two forms being compared; leftBody and
-                    rightBody are one or two sentences each, in Azerbaijani, and each ends with a
-                    short English example.
-        points      Exactly 3 short Azerbaijani sentences. Each one must be independently useful —
-                    no "bu mövzunu təkrar et".
+                    rightBody are each 3-4 sentences, in Azerbaijani: what the form means, a situation
+                    where a student would wrongly reach for the OTHER column, and a short English
+                    example woven into the text.
+        points      Exactly 3 Azerbaijani sentences, each a full, specific takeaway a student could
+                    act on immediately (a rule, a signal word to watch for, a check to run on their
+                    own writing) — never a generic "bu mövzunu təkrar et" or "diqqətli ol".
 
         =====================================================================
         SECTION 4 — QUIZ

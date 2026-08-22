@@ -3,27 +3,23 @@ using EssayChecker.Domain.Enums;
 
 namespace EssayChecker.Application.DTOs.Interfaces;
 
-/// <summary>Mövzu izahı (dərs): yaratma + keş, siyahı, detal, silmə.</summary>
+/// <summary>
+/// Ortaq dərs kitabxanası: yaratma (limitli) və oxuma (limitsiz). Silmə qəsdən yoxdur — dərs
+/// ortaq resursdur, bir istifadəçinin silməsi qalan hamını ondan məhrum edər.
+/// </summary>
 public interface ILessonService
 {
-    /// <param name="grade">Controller tərəfindən həll edilmiş sinif (sorğu → şagird kartı).</param>
-    /// <returns>
-    /// Mövzu İngilis dilinə aid deyilsə <see cref="CreateLessonResult.Success"/> false olur —
-    /// bu halda heç nə saxlanılmır və çağıran tərəf sayğacı ARTIRMAMALIDIR.
-    /// </returns>
     Task<CreateLessonResult> CreateAsync(
         int userId, CreateLessonRequest request, GradeLevel grade, CancellationToken cancellationToken = default);
 
-    Task<LessonHistoryResponse> GetHistoryAsync(
-        int userId, string? search, int? studentId, int? groupId, int page, int pageSize,
+    Task<LessonHistoryResponse> GetLibraryAsync(
+        int userId, string? search, GradeLevel? grade, bool onlyMine, int page, int pageSize,
         CancellationToken cancellationToken = default);
 
     Task<LessonResponse?> GetByIdAsync(int userId, int lessonId, CancellationToken cancellationToken = default);
-
-    Task<bool> DeleteAsync(int userId, int lessonId, CancellationToken cancellationToken = default);
 }
 
-/// <summary>AI-dan dərs məzmunu alan servis (OpenRouter). Keş və saxlama bunun işi deyil.</summary>
+/// <summary>AI-dan dərs məzmunu alan servis (OpenRouter). Kitabxana və saxlama bunun işi deyil.</summary>
 public interface ILessonGenerator
 {
     Task<LessonGenerationResult> GenerateAsync(

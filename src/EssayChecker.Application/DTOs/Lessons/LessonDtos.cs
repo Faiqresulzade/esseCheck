@@ -10,14 +10,12 @@ public sealed class CreateLessonRequest
     public string Topic { get; set; } = null!;
 
     /// <summary>
-    /// Opsional: göndərilməyibsə və <see cref="StudentId"/> verilibsə şagirdin kartındakı sinif
-    /// işlədilir (esse endpoint-indəki eyni məntiq).
+    /// Məcburidir. Dərslər ortaq kitabxanadadır və şagirdə bağlanmır, ona görə sinfi şagird
+    /// kartından götürmək imkanı yoxdur — istifadəçi açıq seçməlidir.
     /// </summary>
+    [Required(ErrorMessage = "Sinif seçilməlidir.")]
     [EnumDataType(typeof(GradeLevel), ErrorMessage = "Sinif yalnız Grade9 və ya Grade11 ola bilər.")]
     public GradeLevel? Grade { get; set; }
-
-    /// <summary>Opsional — dərs hansı şagird üçün qeyd olunsun (yalnız etiket/filtr).</summary>
-    public int? StudentId { get; set; }
 }
 
 /// <summary>
@@ -52,12 +50,16 @@ public sealed record LessonQuizQuestionDto(
     int CorrectIndex,
     string Explanation);
 
+/// <summary>
+/// Dərsin tam məzmunu. <see cref="IsMine"/> yalnız məlumat üçündür (UI-da "mənim yaratdığım"
+/// nişanı) — heç bir səlahiyyət fərqi yaratmır, dərsi hamı eyni cür oxuyur.
+/// </summary>
 public sealed record LessonResponse(
     int Id,
     string Topic,
     GradeLevel Grade,
-    int? StudentId,
-    string? StudentName,
+    string CreatedByName,
+    bool IsMine,
     DateTime CreatedAt,
     IReadOnlyList<LessonSlideDto> Slides,
     IReadOnlyList<LessonQuizQuestionDto> Quiz);
@@ -67,8 +69,8 @@ public sealed record LessonListItemResponse(
     int Id,
     string Topic,
     GradeLevel Grade,
-    int? StudentId,
-    string? StudentName,
+    string CreatedByName,
+    bool IsMine,
     int SlideCount,
     DateTime CreatedAt);
 
@@ -81,11 +83,11 @@ public sealed record LessonHistoryResponse(
 
 public enum CreateLessonOutcome
 {
-    /// <summary>Yeni dərs yaradıldı (AI və ya keşdən) — gündəlik sayğac artırıldı.</summary>
+    /// <summary>Yeni dərs yaradıldı və kitabxanaya əlavə olundu — gündəlik limit xərcləndi.</summary>
     Created = 0,
 
-    /// <summary>İstifadəçinin siyahısında bu mövzu artıq var idi — hazır dərs açıldı, limit toxunulmadı.</summary>
-    Reused = 1,
+    /// <summary>Bu mövzu kitabxanada artıq var idi — hazır dərs açıldı, AI çağırılmadı, limit toxunulmadı.</summary>
+    AlreadyInLibrary = 1,
 
     /// <summary>Mövzu İngilis dili dərsinə aid deyil — heç nə saxlanılmadı, limit toxunulmadı.</summary>
     InvalidTopic = 2,
@@ -95,14 +97,15 @@ public enum CreateLessonOutcome
 }
 
 /// <summary>
-/// Dərs yaradılışının nəticəsi. Limit qərarı qəsdən servisin içindədir (esse axınından fərqli
-/// olaraq): mövcud dərsin təkrar açılması limit xərcləmir, bunu isə yalnız servis bilir.
+/// Dərs yaradılışının nəticəsi. Limit qərarı qəsdən servisin içindədir: mövzunun kitabxanada
+/// olub-olmaması limitin xərclənib-xərclənməyəcəyini müəyyən edir, bunu isə yalnız servis bilir.
 /// </summary>
 public sealed record CreateLessonResult(CreateLessonOutcome Outcome, string? Error, LessonResponse? Lesson)
 {
     public static CreateLessonResult Created(LessonResponse lesson) => new(CreateLessonOutcome.Created, null, lesson);
 
-    public static CreateLessonResult Reused(LessonResponse lesson) => new(CreateLessonOutcome.Reused, null, lesson);
+    public static CreateLessonResult AlreadyInLibrary(LessonResponse lesson) =>
+        new(CreateLessonOutcome.AlreadyInLibrary, null, lesson);
 
     public static CreateLessonResult InvalidTopic(string error) => new(CreateLessonOutcome.InvalidTopic, error, null);
 
