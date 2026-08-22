@@ -316,10 +316,13 @@ UTC midnight.
 - `POSTMAN_DOCS.md` — full endpoint reference with request/response examples for every route (23
   requests across Auth/Account/Essay/Subscription); `EssayCheck.postman_collection.json` is the
   importable collection.
-- `FRONTEND_UNIFIED_PLAN_LIMITS.md`, `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md`,
-  `FRONTEND_TEACHER_GROUPS.md`, `FRONTEND_LESSONS.md` — notes written for frontend/mobile-side
-  implementation of specific features (plan limit display, natural-expression scoring UI, teacher
-  groups/students + analytics, topic-explanation lessons).
+- `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md`, `FRONTEND_TEACHER_GROUPS.md`, `FRONTEND_LESSONS.md`,
+  `FRONTEND_PREMIUM_PLAN.md` — notes written for frontend/mobile-side implementation of specific
+  features (natural-expression scoring UI, teacher groups/students + analytics, topic-explanation
+  lessons, the four-plan pricing model). `FRONTEND_UNIFIED_PLAN_LIMITS.md` is **stale** as of
+  2026-08-23 (describes 3 plans, shows `ProPlus` as unlimited) — `FRONTEND_PREMIUM_PLAN.md`
+  supersedes it; keep it around for its OCR-unification history but don't hand it to frontend as
+  current.
 - `BACKEND_LESSON_FEATURE.md` — the frontend team's original order for the lesson feature; the
   built result and the three places it deviates are documented in `FRONTEND_LESSONS.md` §1.
 
