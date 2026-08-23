@@ -29,4 +29,21 @@ public class RegisterRequest
     /// </summary>
     [MaxLength(10)]
     public string? ReferralCode { get; set; }
+
+    /// <summary>
+    /// Cihaz identifikatoru (Android: Settings.Secure.ANDROID_ID). Pulsuz 1 aylıq sınağın
+    /// yalnız BİR dəfə verilməsi üçündür — bax DeviceTrial.
+    ///
+    /// Opsionaldır: göndərilməsə qeydiyyat normal davam edir, sadəcə trial VERİLMİR (istifadəçi
+    /// Free planda qalır). Bu, qəsdəndir — əks halda başlığı göndərməməklə qorumanı keçmək olardı.
+    /// </summary>
+    [MaxLength(200)]
+    public string? DeviceId { get; set; }
+
+    /// <summary>
+    /// Google Play Integrity token-i. Hazırda yoxlanmır (Play Integrity qurulmayıb), amma sahə
+    /// indidən qəbul olunur ki, mobil tərəf bir dəfə göndərməyə başlasın və server tərəfdə
+    /// yoxlama aktivləşəndə tətbiqin yeni versiyası tələb olunmasın.
+    /// </summary>
+    public string? IntegrityToken { get; set; }
 }

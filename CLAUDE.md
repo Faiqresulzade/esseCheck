@@ -304,6 +304,27 @@ Console was set to `premium_monthly`, the reverse of the `pro_monthly`/`pro_plus
 pattern; double-check this against Play Console if purchase verification for Premium ever fails with
 an "unknown product" error.
 
+**Free trial on registration (2026-08-23).** A new account gets 1 month of `Pro` automatically, but
+the entitlement is bound to the **device**, not the account — otherwise the user just registers again
+next month. `RegisterRequest.DeviceId` (Android `ANDROID_ID`) is hashed with SHA-256 and claimed in
+`DeviceTrials` (unique index). `TrialService` claims the device row *first* and only then writes the
+subscription, so two simultaneous registrations from one device can't both win. The `DeviceTrials`
+row has **no FK to `AspNetUsers` on purpose** — deleting the account must not release the device, or
+"delete account → re-register" would bypass the whole thing. Granted subscriptions use
+`SubscriptionPlatform.Trial` so they're distinguishable from real purchases in reporting.
+
+A missing `DeviceId` yields **no trial** (Free), deliberately: if absence granted a trial, omitting
+the field would be a trivial bypass. Registration never fails because of the trial path — any error
+there is logged and swallowed.
+
+`TrialSettings.RequireIntegrityToken` is the seam for Play Integrity, which is **not set up yet**.
+`RegisterRequest.IntegrityToken` is already accepted (and ignored) so that turning verification on
+later doesn't require a new app release. Until then, `ANDROID_ID` is trusted on its own and a
+determined user can forge it — a known, accepted risk documented in `FRONTEND_TRIAL.md`. Note that
+Play Integrity alone does **not** supply a stable device ID; it attests that a real app on a real
+device sent the ID. (Play Integrity "Device Recall" is the feature that survives factory reset —
+verify its current availability before relying on it.)
+
 `SubscriptionController` supports manual/test plan assignment (`/subscribe`) plus real Google Play
 Billing (`/google/verify` validates a purchase server-side against the Google Play Developer API;
 `/google/rtdn` is the Pub/Sub push webhook for Google-initiated subscription state changes, secured
@@ -317,9 +338,9 @@ UTC midnight.
   requests across Auth/Account/Essay/Subscription); `EssayCheck.postman_collection.json` is the
   importable collection.
 - `FRONTEND_NATURAL_EXPRESSION_STAT_CARD.md`, `FRONTEND_TEACHER_GROUPS.md`, `FRONTEND_LESSONS.md`,
-  `FRONTEND_PREMIUM_PLAN.md` — notes written for frontend/mobile-side implementation of specific
-  features (natural-expression scoring UI, teacher groups/students + analytics, topic-explanation
-  lessons, the four-plan pricing model). `FRONTEND_UNIFIED_PLAN_LIMITS.md` is **stale** as of
+  `FRONTEND_PREMIUM_PLAN.md`, `FRONTEND_TRIAL.md` — notes written for frontend/mobile-side
+  implementation of specific features (natural-expression scoring UI, teacher groups/students +
+  analytics, topic-explanation lessons, the four-plan pricing model, the device-bound free trial). `FRONTEND_UNIFIED_PLAN_LIMITS.md` is **stale** as of
   2026-08-23 (describes 3 plans, shows `ProPlus` as unlimited) — `FRONTEND_PREMIUM_PLAN.md`
   supersedes it; keep it around for its OCR-unification history but don't hand it to frontend as
   current.

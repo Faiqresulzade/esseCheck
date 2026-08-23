@@ -18,6 +18,7 @@ public sealed class AuthService : IAuthService
     private readonly IJwtService _jwtService;
     private readonly IEmailService _emailService;
     private readonly IRefreshTokenRepository _refreshTokens;
+    private readonly ITrialService _trialService;
     private readonly AppSettings _appSettings;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AuthService> _logger;
@@ -27,6 +28,7 @@ public sealed class AuthService : IAuthService
         IJwtService jwtService,
         IEmailService emailService,
         IRefreshTokenRepository refreshTokens,
+        ITrialService trialService,
         IOptions<AppSettings> appSettings,
         IOptions<JwtSettings> jwtSettings,
         ILogger<AuthService> logger)
@@ -35,6 +37,7 @@ public sealed class AuthService : IAuthService
         _jwtService = jwtService;
         _emailService = emailService;
         _refreshTokens = refreshTokens;
+        _trialService = trialService;
         _appSettings = appSettings.Value;
         _jwtSettings = jwtSettings.Value;
         _logger = logger;
@@ -63,6 +66,17 @@ public sealed class AuthService : IAuthService
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
             return AuthResult.Failure(result.Errors.Select(e => e.Description).ToArray());
+
+        // Sınaq abunəliyi qeydiyyatı BLOKLAMAMALIDIR: cihaz artıq istifadə edibsə, ID
+        // göndərilməyibsə, ya da gözlənilməz xəta olarsa, istifadəçi sadəcə Free planda qalır.
+        try
+        {
+            await _trialService.TryGrantAsync(user.Id, request.DeviceId, request.IntegrityToken, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Sınaq abunəliyi verilərkən xəta baş verdi (userId {UserId}).", user.Id);
+        }
 
         return AuthResult.Success("Qeydiyyat uğurla tamamlandı.");
     }

@@ -98,6 +98,10 @@ builder.Services.AddOptions<GooglePlaySettings>()
 builder.Services.AddOptions<TestingSettings>()
     .BindConfiguration(TestingSettings.SectionName);
 
+// Qeydiyyatda verilən cihaza bağlı pulsuz sınaq (bax TrialSettings.cs).
+builder.Services.AddOptions<TrialSettings>()
+    .BindConfiguration(TrialSettings.SectionName);
+
 // --- Layers ---
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();

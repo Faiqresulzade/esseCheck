@@ -26,6 +26,8 @@ public class EssayDbContext
 
     public DbSet<DailyUsage> DailyUsages => Set<DailyUsage>();
 
+    public DbSet<DeviceTrial> DeviceTrials => Set<DeviceTrial>();
+
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<ProcessedGoogleNotification> ProcessedGoogleNotifications => Set<ProcessedGoogleNotification>();

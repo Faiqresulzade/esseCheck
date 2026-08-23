@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<IEssayRepository, EssayRepository>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<IDailyUsageRepository, DailyUsageRepository>();
+        services.AddScoped<IDeviceTrialRepository, DeviceTrialRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IProcessedNotificationRepository, ProcessedNotificationRepository>();
         services.AddScoped<IAccountPurgeRepository, AccountPurgeRepository>();
