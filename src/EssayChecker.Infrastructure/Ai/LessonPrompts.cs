@@ -12,7 +12,7 @@ internal static class LessonPrompts
     /// Keş açarının bir hissəsi. <see cref="Rules"/> DƏYİŞDİRİLDİKDƏ MÜTLƏQ ARTIRILMALIDIR —
     /// əks halda köhnə promptla yaradılmış dərslər əbədi olaraq keşdən qaytarılmağa davam edər.
     /// </summary>
-    public const int Version = 3;
+    public const int Version = 5;
 
     public const string Rules = """
         You write short, visual English lessons for Azerbaijani secondary-school students. The app
@@ -90,13 +90,31 @@ internal static class LessonPrompts
         from Azerbaijani. If you cannot say something concrete, you have not thought about the topic
         enough — think harder, do not pad with generic filler.
 
+        LENGTH IS PART OF THE SPEC, NOT A SUGGESTION. A body that skips the two-paragraph structure
+        below is an incomplete answer, exactly like a missing field would be.
+
         --- Field rules ---
-        body        Intro and Rule: 5-8 sentences (roughly 400-700 Azerbaijani characters). Do not
-                    just state the rule — walk the student through it: why it exists, how it differs
-                    from what Azerbaijani would suggest, when exactly to use it, and one exception or
-                    edge case if the topic has one. Weave in a short illustrative phrase where it
-                    helps, but full example sentences still belong on the Examples slide, not here.
-                    Write in short paragraphs of full sentences, never a bare list.
+        body        Intro and Rule: exactly TWO paragraphs, separated by a blank line (a "\n\n"
+                    inside the string). Each paragraph is 4-6 full sentences. This is two separate
+                    writing tasks, not one long thought — write paragraph 1 completely, then start
+                    paragraph 2 as a fresh block covering different ground:
+
+                      Paragraph 1 — WHY / HOW IT WORKS. What job this rule or topic does in English,
+                      why it exists as its own thing, and how it differs from what an Azerbaijani
+                      speaker would instinctively say or write (Azerbaijani has no direct equivalent
+                      for most of these forms, so name the specific mismatch).
+
+                      Paragraph 2 — WHEN / WATCH OUT FOR. Two or three concrete situations or sentence
+                      contexts where the student will actually need this, at least one exception or
+                      commonly confused edge case, and how this shows up in exam or essay writing.
+
+                    A paragraph that is 1-2 sentences has failed the spec regardless of how correct it
+                    is — go back and add the missing content from its list above rather than trimming.
+                    Do not just state the rule — walk the student through it the way a teacher would
+                    explain it on a whiteboard, not a dictionary entry. Weave in short illustrative
+                    phrases where they help, but full example sentences still belong on the Examples
+                    slide, not here. Never repeat the same point twice to pad length — every sentence
+                    must add new information.
         formula     A single short pattern, e.g. "have / has + V3" or "was / were + V3". Rule slide
                     only. Keep it under 40 characters — this is a quick visual anchor, the explanation
                     itself lives in "body".
@@ -111,15 +129,17 @@ internal static class LessonPrompts
                             "en" (same words, same order, same capitalisation). If you cannot copy it
                             exactly, use null.
         mistakes    At most 3 items. "wrong" is the incorrect English form a student would write,
-                    "correct" is the fixed version of the SAME sentence, "note" is 1-2 Azerbaijani
-                    sentences naming the rule that was broken AND why an Azerbaijani speaker tends to
-                    make exactly this error — not just "bu səhvdir", explain the mechanism. Use real
-                    learner errors, especially ones caused by Azerbaijani (missing articles, wrong
-                    tense after a past time marker, calques).
+                    "correct" is the fixed version of the SAME sentence, "note" is 2-3 Azerbaijani
+                    sentences: name the rule that was broken, explain WHY an Azerbaijani speaker tends
+                    to make exactly this error (what in Azerbaijani grammar or habit causes it), and
+                    say what to check next time to avoid it. Not just "bu səhvdir" — explain the
+                    mechanism, not just the fact. Use real learner errors, especially ones caused by
+                    Azerbaijani (missing articles, wrong tense after a past time marker, calques).
         comparison  Two columns. leftTitle/rightTitle are the two forms being compared; leftBody and
-                    rightBody are each 3-4 sentences, in Azerbaijani: what the form means, a situation
-                    where a student would wrongly reach for the OTHER column, and a short English
-                    example woven into the text.
+                    rightBody are each 5-7 sentences, in Azerbaijani: what the form means, WHY it
+                    exists as separate from the other column, one or two concrete situations where a
+                    student would wrongly reach for the OTHER column and what makes those situations
+                    tricky, and a short English example woven into the text.
         points      Exactly 3 Azerbaijani sentences, each a full, specific takeaway a student could
                     act on immediately (a rule, a signal word to watch for, a check to run on their
                     own writing) — never a generic "bu mövzunu təkrar et" or "diqqətli ol".

@@ -229,19 +229,38 @@ topic someone else already paid for.
   hash of the question text plus the question's position, so it is deterministic (never `Random`,
   never `string.GetHashCode`, which is per-process randomised) and a cached template can never
   disagree with the lessons copied from it. Options containing "above"/"yuxarıdakı" are left alone.
-- Uses its own model (`OpenRouter:LessonModel`, currently `gpt-4o-mini`), separate from the essay
-  model — switching it is a config-only change.
+- Uses its own model (`OpenRouter:LessonModel`), separate from the essay model — switching it is a
+  config-only change. **Measured three candidates 2026-08-23** on the real prompt (cost via
+  OpenRouter's `usage.cost`, quality via Intro/Rule body length against the ~900-1400 char target):
+  `gpt-4o-mini` ($0.0011/lesson, ~12-17s, bodies plateaued at ~575-660 chars regardless of how hard
+  the prompt pushed for more); `gpt-5.6-luna` (the essay model — $0.0032/lesson, noticeably better
+  reasoning and exam-relevant content, but pushed `Pro`/`ProPlus`/`Premium` worst-case cost slightly
+  *above* their break-even floor at current prices); `google/gemini-2.5-flash-lite` ($0.0016/lesson,
+  ~13s — the fastest of six models tried including `deepseek-v3.2` and `llama-3.3-70b-instruct` — and
+  the only one landing inside the target length on the first try, 963-1011 chars). Settled on
+  `gemini-2.5-flash-lite`: cheaper and faster than `gpt-5.6-luna` with equal or better length, and it
+  restores `Pro`/`ProPlus` to (just barely) profitable at current prices — `Premium` is still ~$1/mo
+  under its worst-case floor, see "Subscriptions" below.
 - Slides and quiz are nested JSON columns (`OwnsMany(...).ToJson()` with owned collections inside);
   verified to round-trip losslessly including `comparison` and `examples`.
 - **Prompt depth, measured 2026-08-22 → fixed 2026-08-23:** the first version of the prompt produced
   bodies of only ~100-150 characters per slide — one throwaway sentence, no real teaching content.
-  `LessonPrompts.Rules` now requires 5-8 sentences per Intro/Rule body (why the rule exists, how it
-  differs from what Azerbaijani would suggest, one exception if there is one), which measured out at
-  ~450-550 characters per slide with actual substance. `LessonPrompts.Version` was bumped 1 → 2 for
-  this edit — **always bump it when `Rules` changes**, since a lesson already in the library is never
-  regenerated just because the prompt got better; the version field is informational only (there is
-  no auto-invalidation), so an old prompt version sitting in the library is a signal to regenerate by
-  hand, not something the system fixes on its own.
+  `LessonPrompts.Rules` now requires a strict two-paragraph structure per Intro/Rule body (paragraph
+  1: why the rule exists and how it differs from Azerbaijani instinct; paragraph 2: concrete usage
+  situations, an exception, and the exam/essay angle) — plain sentence-count targets ("write 9-14
+  sentences") measurably under-performed this on `gpt-4o-mini`, the two-paragraph framing did better.
+  `LessonPrompts.Version` has been bumped several times since (**always bump it when `Rules`
+  changes**, most recently 4 → 5 for the paragraph-structure edit): a lesson already in the library is
+  never regenerated just because the prompt got better or the topic-validation logic was loosened
+  (see below) — the version field is informational only (no auto-invalidation), so an old version
+  sitting in the library is a signal to regenerate by hand, not something the system fixes on its own.
+- **Topic validation was too conservative, fixed 2026-08-23:** Azerbaijani-phrased topics
+  ("zamanlar", "feillər", and even "İngilis dilində məktub yazmaq" — literally the prompt's own
+  example of a valid topic) were being rejected by `gpt-4o-mini` as not English-related, despite the
+  prompt already saying Azerbaijani phrasing was fine. Since this app only ever teaches English, the
+  prompt now says so explicitly and defaults to accepting rather than leaving the judgment call to
+  the model, with a literal list of accepted Azerbaijani phrasings. Verified against the real model:
+  previously-rejected topics now return `isEnglishTopic: true`.
 - The `ReshapeLessonsIntoSharedLibrary` migration was **hand-edited** after scaffolding: EF's
   auto-generated version renamed the `UserId` column straight to `PromptVersion` and added
   `CreatedByUserId` with `defaultValue: 0` — which would have silently discarded who created each
@@ -283,15 +302,27 @@ the code, only the shared daily total.
 **None of these are `null`/truly unlimited anymore** — that changed 2026-08-23. `ProPlus` used to be
 literal unlimited essays; it is now capped at 20/day, a real behaviour change for any already-paying
 ProPlus subscriber. `Premium`'s 40/day is deliberately marketed to users as "limitsiz esse yoxlama"
-while the backend enforces a real fair-use number — the cap was sized from measured real OpenRouter
-cost (`gpt-5.6-luna`, ~$0.0083/essay in Aug 2026: two calls, detection + scoring) so that even a user
-who hits it every single day for a month stays inside the plan's calculated cost floor. If you ever
-raise these numbers, re-derive them from current per-call cost, not from the old ones — model pricing
-and prompt length both drift.
+while the backend enforces a real fair-use number.
 
 Lesson limits are tiered too now (used to be flat 1/day for every plan) — see `PlanPolicy` for why
 this still doesn't touch the shared-library reasoning: the counter limits new *generation*, not
-reading. `LessonPrompts`-cost was measured separately (`gpt-4o-mini`, ~$0.0011/lesson).
+reading.
+
+**Cost floor, re-measured 2026-08-23 after the lesson model switch to `gemini-2.5-flash-lite`**
+(essay $0.0083 × 2 calls unchanged, lesson now $0.0016 × 1 call). Worst-case monthly AI cost assumes
+every daily limit is hit every day for 30 days — real average usage is far below this:
+
+| Plan | Worst-case AI cost/mo | Break-even price (15% Google cut) | Current price | Margin |
+|---|---|---|---|---|
+| Pro | $2.54 | $2.99 | $2.99 | ~breakeven, no buffer |
+| ProPlus | $5.08 | $5.97 | $5.99 | ~breakeven, no buffer |
+| Premium | $10.15 | $11.94 | $10.99 | **below floor by ~$1/mo** |
+
+`Premium` is still priced under its theoretical worst-case floor — acceptable only because real usage
+never sustains the daily cap every day; treat this as a known, accepted tail risk, not a bug. If you
+ever raise `DailyLimit`/`LessonDailyLimit` or change either model, **re-run this measurement** (real
+`usage.cost` from OpenRouter, not an estimate) before assuming the current prices still hold — model
+pricing and prompt length both drift, and this table goes stale silently.
 
 `PlanCatalog`'s `Price`/`Currency` fields are **display-only placeholders**, not the real Google Play
 charge — the actual amount is configured per-region directly in Play Console and this backend has no
