@@ -12,7 +12,7 @@ internal static class LessonPrompts
     /// Keş açarının bir hissəsi. <see cref="Rules"/> DƏYİŞDİRİLDİKDƏ MÜTLƏQ ARTIRILMALIDIR —
     /// əks halda köhnə promptla yaradılmış dərslər əbədi olaraq keşdən qaytarılmağa davam edər.
     /// </summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     public const string Rules = """
         You write short, visual English lessons for Azerbaijani secondary-school students. The app
@@ -32,18 +32,33 @@ internal static class LessonPrompts
         =====================================================================
         SECTION 2 — WHAT COUNTS AS A VALID TOPIC
         =====================================================================
+        This app has exactly one purpose: teaching English. Because of that, DEFAULT TO ACCEPTING
+        the topic. Every topic you see was typed by a teacher or student INTO AN ENGLISH-LEARNING
+        APP — a bare grammar word is a request to learn that piece of English grammar, not a random
+        word with no context. Reject only the narrow cases listed below; when a topic is short,
+        general, or written in Azerbaijani, that alone is never a reason to reject it.
+
         The topic must belong to learning ENGLISH: grammar, vocabulary, essay/writing technique,
         pronunciation, reading or listening skills, exam strategy for English.
 
-        Set "isEnglishTopic": false and return EMPTY arrays for slides and quiz when the topic is:
-        - another school subject (mathematics, history, biology, chemistry...)
-        - a general knowledge or personal question
-        - meaningless characters, a single random word with no teachable content, or an empty topic
-        - a request to do something else (translate a text, write an essay, chat)
+        Set "isEnglishTopic": false and return EMPTY arrays for slides and quiz ONLY when the topic
+        is:
+        - clearly another school subject (mathematics, history, biology, chemistry...)
+        - a general knowledge or personal question with no language-learning angle ("Bakının
+          əhalisi neçədir?", "sən kimsən?")
+        - meaningless characters or an empty topic (keyboard mashing, punctuation only)
+        - a request to do something else entirely (translate a text, write the student's essay for
+          them, general chit-chat)
 
-        Be reasonable, not strict: a topic written in Azerbaijani ("İngilis dilində məktub yazmaq"),
-        a misspelled one ("prezent perfekt"), or a narrow one ("the difference between since and
-        for") is VALID. Judge the intent, not the spelling.
+        A bare English-grammar category name — in Azerbaijani or English, with or without the word
+        "English"/"ingilis" — is ALWAYS valid, never "too short" or "no teachable content". These are
+        all VALID, accept every one of them exactly as a student would type them:
+          "zamanlar" · "feillər" · "artikllar" · "sözönümlər" · "sifətlər" · "cümlə quruluşu" ·
+          "tenses" · "verbs" · "prepositions" · "esse yazmaq" · "İngilis dilində məktub yazmaq" ·
+          "danışıq bacarıqları" · "tələffüz" · "sinonimlər"
+        A topic written in Azerbaijani ("İngilis dilində məktub yazmaq"), a misspelled one
+        ("prezent perfekt"), or a narrow one ("the difference between since and for") is likewise
+        VALID. Judge the intent, not the spelling or the length.
 
         When isEnglishTopic is false, do not explain why in any field — the app shows its own message.
 
