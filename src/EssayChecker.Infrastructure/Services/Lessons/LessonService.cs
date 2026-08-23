@@ -110,7 +110,10 @@ public sealed class LessonService : ILessonService
     private async Task<LessonResponse> ToResponseAsync(Lesson lesson, int currentUserId, CancellationToken cancellationToken)
     {
         var createdByName = await _lessons.GetCreatorNameAsync(lesson.CreatedByUserId, cancellationToken);
-        return LessonMapper.ToResponse(lesson, createdByName ?? string.Empty, lesson.CreatedByUserId == currentUserId);
+        return LessonMapper.ToResponse(
+            lesson,
+            LessonCreator.DisplayName(createdByName),
+            lesson.CreatedByUserId == currentUserId);
     }
 
     /// <summary>

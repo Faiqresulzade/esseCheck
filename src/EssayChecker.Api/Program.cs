@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using EssayChecker.Api.RateLimiting;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure;
 using EssayChecker.Persistence;
@@ -102,6 +103,9 @@ builder.Services.AddOptions<TestingSettings>()
 builder.Services.AddOptions<TrialSettings>()
     .BindConfiguration(TrialSettings.SectionName);
 
+// Auth endpoint-ləri üçün IP-yə görə sürət limiti (bax AuthRateLimiting.cs).
+builder.Services.AddAuthRateLimiting();
+
 // --- Layers ---
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();
@@ -191,6 +195,11 @@ app.UseSwaggerUI();
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicy);
+
+// UseForwardedHeaders-dən SONRA olmalıdır: əks halda bütün sorğular proxy-nin IP-sinə düşər və
+// limit bir istifadəçi əvəzinə hamıya birlikdə tətbiq olunardı.
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

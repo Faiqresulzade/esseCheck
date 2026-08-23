@@ -63,11 +63,20 @@ public class EssayController : ApiControllerBase
         return Ok(result.Essay);
     }
 
-    /// <summary>Şəkildən mətn oxuyur (OCR) — gündəlik limit mətnlə eyni sayğaca daxildir. İstifadəçi baxıb düzəldəcək.</summary>
+    /// <summary>
+    /// Şəkildən mətn oxuyur (OCR). İstifadəçi mətni yoxlayıb düzəldir, sonra /evaluate çağırır.
+    ///
+    /// Bu addım gündəlik sayğacı ARTIRMIR — yalnız qalan haqqı yoxlayır. Səbəb: şəkilli esse
+    /// istifadəçi üçün bir yoxlamadır, iki yox. Əvvəllər həm OCR, həm evaluate sayğacı artırırdı
+    /// və Free istifadəçi (gündə 1) şəkil axınını HEÇ VAXT tamamlaya bilmirdi: OCR yeganə haqqı
+    /// yeyir, sonrakı /evaluate isə 429 alırdı.
+    /// </summary>
     [HttpPost("ocr")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<IActionResult> Ocr(IFormFile image, CancellationToken cancellationToken)
     {
+        // Sayğac artırılmasa da yoxlama qalır: limiti bitmiş istifadəçi OCR-i pulsuz mətn
+        // çıxarma xidməti kimi işlədə bilməsin (hər çağırış real AI xərcidir).
         var denied = await CheckUsageAsync(hasImages: true, cancellationToken);
         if (denied is not null)
             return denied;
@@ -81,7 +90,6 @@ public class EssayController : ApiControllerBase
         await using var stream = image.OpenReadStream();
         var result = await _essayService.ReadImageAsync(stream, image.ContentType, cancellationToken);
 
-        await _usageLimitService.ConsumeOcrAsync(UserId, cancellationToken);
         return Ok(result);
     }
 

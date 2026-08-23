@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using EssayChecker.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EssayChecker.Persistence.Migrations
 {
     [DbContext(typeof(EssayDbContext))]
-    partial class EssayDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260823201815_MakeLessonCreatorNullable")]
+    partial class MakeLessonCreatorNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

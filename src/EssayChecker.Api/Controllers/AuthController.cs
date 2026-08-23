@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Auth;
+using EssayChecker.Api.RateLimiting;
 using EssayChecker.Application.DTOs.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EssayChecker.Api.Controllers;
 
@@ -18,7 +20,8 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    /// <summary>Qeydiyyat (Register).</summary>
+    /// <summary>Qeydiyyat (Register). IP-yə görə saatda 5 dəfə (bax AuthRateLimiting).</summary>
+    [EnableRateLimiting(AuthRateLimiting.Registration)]
     [HttpPost("register")]
     public async Task<IActionResult> Register(
         [FromBody] RegisterRequest request,
@@ -28,7 +31,11 @@ public class AuthController : ControllerBase
         return result.Succeeded ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>Giriş (Login) — uğurlu olduqda JWT qaytarır. 5 yanlış cəhddən sonra hesab 15 dəqiqə bloklanır.</summary>
+    /// <summary>
+    /// Giriş (Login) — uğurlu olduqda JWT qaytarır. 5 yanlış cəhddən sonra hesab 15 dəqiqə
+    /// bloklanır (Identity lockout), əlavə olaraq IP-yə görə 15 dəqiqədə 10 cəhd (rate limit).
+    /// </summary>
+    [EnableRateLimiting(AuthRateLimiting.Login)]
     [HttpPost("login")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request,
@@ -72,7 +79,11 @@ public class AuthController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Şifrəni unutmusunuz — e-mail-ə sıfırlama linki göndərir.</summary>
+    /// <summary>
+    /// Şifrəni unutmusunuz — e-mail-ə sıfırlama linki göndərir. IP-yə görə saatda 3 dəfə:
+    /// bu endpoint başqasının poçtuna e-mail göndərdiyi üçün limitsiz qalsa spam vasitəsi olardı.
+    /// </summary>
+    [EnableRateLimiting(AuthRateLimiting.PasswordReset)]
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword(
         [FromBody] ForgotPasswordRequest request,

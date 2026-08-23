@@ -18,18 +18,15 @@ namespace EssayChecker.Infrastructure.Services.Subscriptions;
 public sealed class TrialService : ITrialService
 {
     private readonly IDeviceTrialRepository _deviceTrials;
-    private readonly ISubscriptionRepository _subscriptions;
     private readonly TrialSettings _settings;
     private readonly ILogger<TrialService> _logger;
 
     public TrialService(
         IDeviceTrialRepository deviceTrials,
-        ISubscriptionRepository subscriptions,
         IOptions<TrialSettings> settings,
         ILogger<TrialService> logger)
     {
         _deviceTrials = deviceTrials;
-        _subscriptions = subscriptions;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -55,20 +52,14 @@ public sealed class TrialService : ITrialService
 
         var now = DateTime.UtcNow;
 
-        var claimed = await _deviceTrials.TryClaimAsync(new DeviceTrial
+        var trial = new DeviceTrial
         {
             DeviceIdHash = Hash(deviceId),
             GrantedToUserId = userId,
             GrantedAt = now
-        }, cancellationToken);
+        };
 
-        if (!claimed)
-        {
-            _logger.LogInformation("Trial verilmədi: bu cihaz sınaq haqqını artıq istifadə edib (userId {UserId}).", userId);
-            return false;
-        }
-
-        await _subscriptions.AddAsync(new UserSubscription
+        var subscription = new UserSubscription
         {
             UserId = userId,
             Plan = _settings.Plan,
@@ -79,9 +70,15 @@ public sealed class TrialService : ITrialService
             Platform = SubscriptionPlatform.Trial,
             CreatedAt = now,
             UpdatedAt = now
-        }, cancellationToken);
+        };
 
-        return true;
+        // Cihaz qeydi və abunəlik bir tranzaksiyadadır — bax IDeviceTrialRepository.
+        var granted = await _deviceTrials.TryClaimAndGrantAsync(trial, subscription, cancellationToken);
+
+        if (!granted)
+            _logger.LogInformation("Trial verilmədi: bu cihaz sınaq haqqını artıq istifadə edib (userId {UserId}).", userId);
+
+        return granted;
     }
 
     /// <summary>Xam cihaz ID-si saxlanılmır — şəxsi məlumatdır, yoxlama üçün heş kifayətdir.</summary>

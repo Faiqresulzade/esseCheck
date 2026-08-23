@@ -14,8 +14,14 @@ public class Lesson
 {
     public int Id { get; set; }
 
-    /// <summary>Dərsi ilk dəfə yaradan (gündəlik limiti xərcləyən) istifadəçi.</summary>
-    public int CreatedByUserId { get; set; }
+    /// <summary>
+    /// Dərsi ilk dəfə yaradan (gündəlik limiti xərcləyən) istifadəçi.
+    ///
+    /// Hesab bərpaolunmaz silindikdə null olur (FK SetNull) — dərsin ÖZÜ silinmir, çünki o,
+    /// ortaq resursdur və başqa müəllimlər ondan istifadə edir. Əvvəllər burada Restrict var idi,
+    /// amma o, hesab təmizləmə xidmətini (AccountPurgeService) tamamilə bloklayırdı.
+    /// </summary>
+    public int? CreatedByUserId { get; set; }
 
     /// <summary>Yaradanın yazdığı mövzu (göründüyü kimi saxlanılır).</summary>
     public string Topic { get; set; } = null!;

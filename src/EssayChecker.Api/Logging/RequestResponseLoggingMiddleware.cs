@@ -86,7 +86,9 @@ internal sealed class RequestResponseLoggingMiddleware
                 UserId = TryGetUserId(context.User),
                 Method = context.Request.Method,
                 Path = context.Request.Path.Value ?? string.Empty,
-                QueryString = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
+                QueryString = context.Request.QueryString.HasValue
+                    ? RequestLogSanitizer.SanitizeQueryString(context.Request.QueryString.Value)
+                    : null,
                 StatusCode = context.Response.StatusCode,
                 RequestBody = RequestLogSanitizer.Sanitize(requestBody),
                 ResponseBody = RequestLogSanitizer.Sanitize(responseBody),

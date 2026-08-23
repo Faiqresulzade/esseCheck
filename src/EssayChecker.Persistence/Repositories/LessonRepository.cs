@@ -1,5 +1,6 @@
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.DTOs.Lessons;
+using EssayChecker.Application.Lessons;
 using EssayChecker.Domain.Entities.Lessons;
 using EssayChecker.Domain.Enums;
 using EssayChecker.Persistence.Context;
@@ -54,28 +55,43 @@ public sealed class LessonRepository : ILessonRepository
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(l => new
+            {
+                l.Id,
+                l.Topic,
+                l.Grade,
+                CreatorName = _db.Users
+                    .Where(u => u.Id == l.CreatedByUserId)
+                    .Select(u => u.FullName)
+                    .FirstOrDefault(),
+                IsMine = l.CreatedByUserId == currentUserId,
+                SlideCount = l.Slides.Count,
+                l.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var mapped = items
             .Select(l => new LessonListItemResponse(
                 l.Id,
                 l.Topic,
                 l.Grade,
-                _db.Users
-                    .Where(u => u.Id == l.CreatedByUserId)
-                    .Select(u => u.FullName)
-                    .FirstOrDefault() ?? string.Empty,
-                l.CreatedByUserId == currentUserId,
-                l.Slides.Count,
+                LessonCreator.DisplayName(l.CreatorName),
+                l.IsMine,
+                l.SlideCount,
                 l.CreatedAt))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
 
-        return new LessonHistoryResponse(items, totalCount, page, pageSize, totalPages);
+        return new LessonHistoryResponse(mapped, totalCount, page, pageSize, totalPages);
     }
 
-    public Task<string?> GetCreatorNameAsync(int userId, CancellationToken cancellationToken = default) =>
-        _db.Users
-            .AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.FullName)
-            .FirstOrDefaultAsync(cancellationToken);
+    public Task<string?> GetCreatorNameAsync(int? userId, CancellationToken cancellationToken = default) =>
+        userId is null
+            ? Task.FromResult<string?>(null)
+            : _db.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(cancellationToken);
 }

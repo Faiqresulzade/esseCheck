@@ -172,6 +172,10 @@ list carrying `studentId`/`studentName`, filterable by `studentId` or `groupId`.
 Everything is derived from rows that already exist — **no extra AI call**, so these endpoints don't
 touch the daily quota and cost nothing.
 
+- Capped at the **most recent 500 essays** per query (`AnalyticsRepository.MaxRows`) — it loads rows
+  into memory to aggregate, so an uncapped query would scale with a teacher's whole history. Rows are
+  fetched newest-first then reversed, so the *oldest* essays are what falls off the edge and
+  `AnalyticsAggregator` still receives them chronologically.
 - `AnalyticsRepository` only fetches flat rows (`EssayAnalyticsRow`) — scores and mistake counts are
   plain columns (`Scores`/`Statistics` are `OwnsOne`, not JSON), so this is a cheap projection that
   deliberately excludes `OriginalText`/`CorrectedEssay`.
@@ -284,13 +288,35 @@ JWT access token + rotating refresh token (hashed with SHA-256 in DB). Refresh e
 used token immediately and issues a new pair — reusing an old refresh token is rejected (standard
 theft-detection pattern). Password reset and password change both revoke **all** refresh tokens for
 the user. Account deletion is soft (`IsDeleted=true`); essay history is preserved, only login is
-blocked.
+blocked. `AccountPurgeService` then hard-deletes the row 30 days later (the promise made on
+`/legal/delete-account`).
+
+**That purge is a single bulk `ExecuteDeleteAsync`, so one bad FK breaks it for everyone.** It did
+exactly that until 2026-08-24: `Lessons.CreatedByUserId` was `Restrict` (to keep a shared lesson
+alive after its creator leaves), which made the whole batch throw, and `AccountPurgeService` caught
+and logged the error — so *no account was ever purged*, silently. It's now nullable with `SetNull`:
+the lesson survives with `createdByName: "Silinmiş istifadəçi"` (`LessonCreator.DisplayName`).
+Before adding any new FK to `AspNetUsers`, decide Cascade or SetNull — **never Restrict**.
+
+`DeviceTrials` deliberately has no FK to `AspNetUsers` at all, so purging a user does not release
+their device's one free trial.
+
+Auth endpoints are rate-limited per IP (`AuthRateLimiting`): registration 5/hour, login 10/15min,
+forgot-password 3/hour. Identity's own lockout only protects a *known* account from password
+guessing — it does nothing about mass registration, email enumeration, or using forgot-password as a
+mail bomb. The limiter must stay **after** `UseForwardedHeaders()` in `Program.cs`, otherwise every
+request partitions on the proxy's IP and the limit applies to all users collectively.
 
 ### Subscriptions
 
 Four plans, all rules centralised in `PlanPolicy` (`SubscriptionPlan` enum: `Free`, `Pro`, `ProPlus`,
 `Premium`). OCR and text checks share one counter — there is no OCR-specific plan gate anywhere in
 the code, only the shared daily total.
+
+**Only `/evaluate` consumes that counter; `/ocr` checks it but does not increment.** A photo essay is
+one check to the user, not two. When both consumed (before 2026-08-24) a Free user (1/day) could
+*never* finish the photo flow: OCR ate the single slot and the follow-up `/evaluate` returned 429.
+`/ocr` still verifies remaining quota so an exhausted user can't use it as a free OCR service.
 
 | Plan | Essays/day (`DailyLimit`) | Lessons/day (`LessonDailyLimit`) |
 |---|---|---|

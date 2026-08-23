@@ -23,6 +23,9 @@ public interface ILessonRepository
         int currentUserId, string? search, GradeLevel? grade, bool onlyMine, int page, int pageSize,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Dərsi yaradanın adı — cavabda göstərmək üçün.</summary>
-    Task<string?> GetCreatorNameAsync(int userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Dərsi yaradanın adı — cavabda göstərmək üçün. Hesab silinibsə (CreatedByUserId null) və ya
+    /// tapılmasa null qaytarır; çağıran tərəf əvəzedici mətn qoyur.
+    /// </summary>
+    Task<string?> GetCreatorNameAsync(int? userId, CancellationToken cancellationToken = default);
 }

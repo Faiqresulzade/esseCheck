@@ -27,11 +27,15 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
         builder.Property(l => l.CreatedAt).IsRequired();
 
         // Yaradan hesab silinsə dərs kitabxanada QALMALIDIR — o, artıq ortaq resursdur və başqa
-        // müəllimlər ondan istifadə edir. Ona görə Cascade deyil, Restrict.
+        // müəllimlər ondan istifadə edir. Ona görə Cascade DEYİL.
+        //
+        // Restrict də olmaz: o, hesab silinməsini tamamilə bloklayırdı və AccountPurgeService-in
+        // toplu silmə əməliyyatını FK xətası ilə çökdürürdü (yəni HEÇ BİR hesab silinmirdi).
+        // SetNull hər iki tələbi ödəyir: dərs qalır, yaradan sahəsi boşalır.
         builder.HasOne<AppUser>()
             .WithMany()
             .HasForeignKey(l => l.CreatedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(l => l.CreatedByUserId);
 
