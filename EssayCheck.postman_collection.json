@@ -289,19 +289,6 @@
           }
         },
         {
-          "name": "Subscribe (Pro / Pro Plus)",
-          "request": {
-            "method": "POST",
-            "header": [ { "key": "Content-Type", "value": "application/json" } ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"plan\": \"ProPlus\",\n  \"platform\": \"Manual\",\n  \"purchaseToken\": null,\n  \"autoRenew\": true,\n  \"durationDays\": 30\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": { "raw": "{{baseUrl}}/api/subscription/subscribe", "host": [ "{{baseUrl}}" ], "path": [ "api", "subscription", "subscribe" ] }
-          }
-        },
-        {
           "name": "Cancel Subscription",
           "request": {
             "method": "POST",

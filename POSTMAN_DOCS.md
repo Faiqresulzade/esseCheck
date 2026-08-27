@@ -8,7 +8,7 @@ Bu sənəd `EssayCheck.postman_collection.json` faylındakı bütün endpoint-l�
 
 ### 1.1. Collection-ı import etmək
 1. Postman-ı aç → **Import** → `EssayCheck.postman_collection.json` faylını seç.
-2. Collection **4 qovluqdan** (folder) ibarətdir: **Auth**, **Account**, **Essay**, **Subscription** — cəmi **23 sorğu**.
+2. Collection **4 qovluqdan** (folder) ibarətdir: **Auth**, **Account**, **Essay**, **Subscription** — cəmi **22 sorğu**.
 
 ### 1.2. Dəyişənlər (Variables)
 Collection səviyyəsində aşağıdakı dəyişənlər var (Postman-da **Collection → Variables** bölməsindən dəyişə bilərsən):
@@ -35,8 +35,8 @@ Backend-də bütün enum-lar **string** kimi seriallaşdırılır (rəqəm kimi 
 
 | Enum | Mümkün dəyərlər | Harada istifadə olunur |
 |---|---|---|
-| `SubscriptionPlan` | `Free`, `Pro`, `ProPlus` | Subscription cavabları, plan seçimi |
-| `SubscriptionPlatform` | `Manual`, `GooglePlay`, `AppStore` | Abunəliyin mənbəyi |
+| `SubscriptionPlan` | `Free`, `Pro`, `ProPlus`, `Premium` | Subscription cavabları, plan seçimi |
+| `SubscriptionPlatform` | `Manual`, `GooglePlay`, `AppStore`, `Trial` | Abunəliyin mənbəyi (`Trial` = qeydiyyatda avtomatik verilən 1 aylıq sınaq) |
 | `EssayInputSource` | `Text`, `Image` | Esse hansı yolla göndərilib |
 | `MistakeCategory` | `Grammar`, `Spelling`, `Vocabulary`, `NaturalExpression` | Səhv kateqoriyası (Qrammatika/Orfoqrafiya/Leksik/Təbii ifadə) |
 
@@ -451,7 +451,7 @@ Tək bir tarixçə qeydini silir.
 
 ---
 
-## 5. Qovluq: **Subscription** (7 sorğu)
+## 5. Qovluq: **Subscription** (6 sorğu)
 
 Baza yol: `/api/subscription`. **Get Plans** və **Google Play RTDN Webhook** istisna olmaqla bütün endpoint-lər autentifikasiya tələb edir.
 
@@ -498,27 +498,14 @@ Cari istifadəçinin aktiv abunəliyini qaytarır.
 
 ---
 
-### 5.3. Subscribe (Pro / Pro Plus) — `POST /api/subscription/subscribe`
-**Manual/test məqsədli** plan keçidi (admin panel və ya test ssenariləri üçün). **Real Google Play alışları üçün bunun əvəzinə bölmə 5.6-dakı `google/verify` istifadə olunmalıdır.**
+> **`POST /api/subscription/subscribe` 2026-08-24-də çıxarılıb.** Bu, hər hansı qeydiyyatlı
+> istifadəçinin özünə `[Authorize]`-dan başqa heç bir yoxlama olmadan istənilən planı (Premium
+> daxil, istənilən müddətə) verə bilməsi demək idi — production-da real pulsuz limitsiz Premium
+> bypass-ı. Real satınalmalar üçün bölmə 5.5-dakı `google/verify` istifadə olunur; əl ilə plan
+> təyin etmək lazım gələrsə (dəstək məqsədilə) bu, birbaşa baza sorğusu ilə edilməlidir, açıq
+> API endpoint-i ilə yox.
 
-**Body:**
-| Sahə | Tip | Tələblər |
-|---|---|---|
-| `plan` | enum | `Pro` və ya `ProPlus` (`Free` göndərilə bilməz) |
-| `platform` | enum | `Manual` (defolt), `GooglePlay`, `AppStore` |
-| `purchaseToken` | string? | Opsional, maks. 4000 simvol |
-| `autoRenew` | bool | Defolt `false` |
-| `durationDays` | int | 1–366 aralığında, defolt 30 |
-
-**Uğurlu cavab (200):** "My Subscription" ilə eyni format, `startDate=indi`, `endDate=indi+durationDays`.
-
-**Status kodları:**
-- `200` — uğurlu
-- `400` — `plan=Free` göndərilib (`{"message":"Free plana abunə olmaq lazım deyil. Ləğv üçün /cancel istifadə edin."}`)
-
----
-
-### 5.4. Cancel Subscription — `POST /api/subscription/cancel`
+### 5.3. Cancel Subscription — `POST /api/subscription/cancel`
 Aktiv abunəliyi ləğv edir, istifadəçi Free plana düşür.
 
 **Body:** Yoxdur
@@ -527,7 +514,7 @@ Aktiv abunəliyi ləğv edir, istifadəçi Free plana düşür.
 
 ---
 
-### 5.5. Usage Status — `GET /api/subscription/usage`
+### 5.4. Usage Status — `GET /api/subscription/usage`
 "Əsas səhifə"dəki **"Gündəlik pulsuz şans"** blokunun backend datası.
 
 **Uğurlu cavab (200) — Free plan, hələ istifadə edilməyib:**
@@ -550,7 +537,7 @@ Aktiv abunəliyi ləğv edir, istifadəçi Free plana düşür.
 
 ---
 
-### 5.6. Google Play — Verify Purchase — `POST /api/subscription/google/verify`
+### 5.5. Google Play — Verify Purchase — `POST /api/subscription/google/verify`
 **Real Google Play Billing inteqrasiyası.** Mobil tətbiq Google Play SDK vasitəsilə satınalma etdikdən sonra alınan `productId` + `purchaseToken`-i backend-ə göndərir. Backend bu məlumatı **birbaşa Google Play Developer API-yə göndərib doğrulayır** — client-in dediyinə etibar edilmir.
 
 **Body:**
@@ -582,7 +569,7 @@ Aktiv abunəliyi ləğv edir, istifadəçi Free plana düşür.
 
 ---
 
-### 5.7. Google Play — RTDN Webhook (Pub/Sub push) — `POST /api/subscription/google/rtdn`
+### 5.6. Google Play — RTDN Webhook (Pub/Sub push) — `POST /api/subscription/google/rtdn`
 **Bu endpoint istifadəçi tərəfindən deyil, Google Cloud Pub/Sub tərəfindən avtomatik çağırılır.** Məqsədi: abunəlik yenilənəndə/ləğv olunanda/bitəndə (istifadəçi tətbiqi açmasa belə) backend-in bundan **dərhal xəbərdar olması**.
 
 **Auth:** Token yoxdur, əvəzinə **query string sirri**: `?secret={{googleRtdnSecret}}`. Bu sirr `appsettings.json → GooglePlay:RtdnSharedSecret` ilə eyni olmalıdır, əks halda `401`.

@@ -82,31 +82,6 @@ public sealed class SubscriptionService : ISubscriptionService
         return Map(subscription);
     }
 
-    public async Task<SubscriptionResponse> SubscribeAsync(int userId, SubscribeRequest request, CancellationToken cancellationToken = default)
-    {
-        var now = DateTime.UtcNow;
-
-        // Əvvəlki aktiv abunəlikləri deaktiv et.
-        await _repository.DeactivateAllAsync(userId, now, cancellationToken);
-
-        var subscription = new UserSubscription
-        {
-            UserId = userId,
-            Plan = request.Plan,
-            StartDate = now,
-            EndDate = now.AddDays(request.DurationDays),
-            IsActive = true,
-            AutoRenew = request.AutoRenew,
-            PurchaseToken = request.PurchaseToken,
-            Platform = request.Platform,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        await _repository.AddAsync(subscription, cancellationToken);
-        return Map(subscription);
-    }
-
     public async Task<SubscriptionResponse> CancelAsync(int userId, CancellationToken cancellationToken = default)
     {
         await _repository.DeactivateAllAsync(userId, DateTime.UtcNow, cancellationToken);

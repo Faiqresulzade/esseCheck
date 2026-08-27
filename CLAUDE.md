@@ -382,11 +382,16 @@ Play Integrity alone does **not** supply a stable device ID; it attests that a r
 device sent the ID. (Play Integrity "Device Recall" is the feature that survives factory reset —
 verify its current availability before relying on it.)
 
-`SubscriptionController` supports manual/test plan assignment (`/subscribe`) plus real Google Play
-Billing (`/google/verify` validates a purchase server-side against the Google Play Developer API;
-`/google/rtdn` is the Pub/Sub push webhook for Google-initiated subscription state changes, secured
-by a shared-secret query param, idempotent via `ProcessedGoogleNotifications`). Daily usage resets at
-UTC midnight.
+`SubscriptionController` handles real Google Play Billing (`/google/verify` validates a purchase
+server-side against the Google Play Developer API; `/google/rtdn` is the Pub/Sub push webhook for
+Google-initiated subscription state changes, secured by a shared-secret query param, idempotent via
+`ProcessedGoogleNotifications`). Daily usage resets at UTC midnight.
+
+**`POST /subscribe` (manual/test plan assignment) was removed 2026-08-24.** It had no restriction
+beyond `[Authorize]` — any authenticated user could grant themselves any plan for any duration for
+free. It went unnoticed through most of this project's development because it was the tool used to
+set up test accounts throughout. If a manual grant is ever needed again (e.g. customer support
+comping a subscription), do it via a direct DB write, not a re-exposed authenticated endpoint.
 
 ## Reference docs in this repo
 

@@ -13,8 +13,6 @@ public interface ISubscriptionService
 
     Task<SubscriptionResponse> GetMySubscriptionAsync(int userId, CancellationToken cancellationToken = default);
 
-    Task<SubscriptionResponse> SubscribeAsync(int userId, SubscribeRequest request, CancellationToken cancellationToken = default);
-
     /// <summary>Abunəliyi ləğv edir (Free-yə keçir).</summary>
     Task<SubscriptionResponse> CancelAsync(int userId, CancellationToken cancellationToken = default);
 

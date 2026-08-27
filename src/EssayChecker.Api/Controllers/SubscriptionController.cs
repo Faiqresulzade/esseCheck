@@ -43,17 +43,6 @@ public class SubscriptionController : ApiControllerBase
     public async Task<IActionResult> My(CancellationToken cancellationToken) =>
         Ok(await _subscriptionService.GetMySubscriptionAsync(UserId, cancellationToken));
 
-    /// <summary>Manual/admin plan keçidi (test məqsədilə). Google Play üçün /google/verify istifadə edin.</summary>
-    [HttpPost("subscribe")]
-    public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request, CancellationToken cancellationToken)
-    {
-        if (request.Plan == SubscriptionPlan.Free)
-            return BadRequest(new { message = "Free plana abunə olmaq lazım deyil. Ləğv üçün /cancel istifadə edin." });
-
-        var result = await _subscriptionService.SubscribeAsync(UserId, request, cancellationToken);
-        return Ok(result);
-    }
-
     /// <summary>Abunəliyi ləğv edir (Free-yə keçir).</summary>
     [HttpPost("cancel")]
     public async Task<IActionResult> Cancel(CancellationToken cancellationToken) =>
