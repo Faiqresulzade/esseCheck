@@ -188,9 +188,14 @@ app.UseMiddleware<EssayChecker.Api.Logging.RequestResponseLoggingMiddleware>();
 
 app.UseExceptionHandler();
 
-// Qəsdən bütün mühitlərdə (production daxil) açıqdır.
-app.UseSwagger();
-app.UseSwaggerUI();
+// Production-da bağlıdır — API sxemini və bütün endpoint-ləri açıq internetə açmaq lazım deyil.
+// Render-də ASPNETCORE_ENVIRONMENT=Production təyin edildiyi üçün bu, əlavə konfiqurasiya tələb
+// etmir (bax DEPLOYMENT.md). Development/lokal mühitdə açıq qalır ki, test rahat olsun.
+if (!app.Environment.IsProduction())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();

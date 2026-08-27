@@ -76,8 +76,9 @@ for the historical context and the UTC/`timestamp with time zone` gotcha.
 `JsonStringEnumConverter` (all enums serialize as strings, e.g. `"plan": "ProPlus"`) → custom
 `InvalidModelStateResponseFactory` so DataAnnotations validation failures return the same
 `AuthResult`-shaped `{ message, errors }` body as the rest of the API, not ASP.NET's default
-`ValidationProblemDetails` → Swagger (enabled in **all** environments, including production) →
-strongly-typed settings with fail-fast `ValidateOnStart()` (except `GooglePlaySettings`, which is
+`ValidationProblemDetails` → Swagger (enabled everywhere **except** `Production` — closed 2026-08-25;
+it used to be open everywhere on purpose, which meant the whole API schema and every endpoint were
+world-readable) → strongly-typed settings with fail-fast `ValidateOnStart()` (except `GooglePlaySettings`, which is
 intentionally allowed to stay unconfigured so the rest of the API isn't blocked before Play Console
 setup is complete) → `AddPersistence` / `AddInfrastructure` → JWT auth → CORS (`Cors:AllowedOrigins`
 empty ⇒ allow any origin, since mobile clients aren't subject to CORS) → `ForwardedHeaders`
