@@ -37,6 +37,7 @@ ASP.NET Core konfiqurasiyası `Section:Key` formatını environment variable-lar
 | `GooglePlay__PackageName` | `az.essaycheck.app` | Google Play Billing üçün (bax `FRONTEND_GOOGLE_PLAY_BILLING.md`) |
 | `GooglePlay__ServiceAccountJsonPath` | `/app/secrets/google-play-service-account.json` | Fayl **volume/bind-mount ilə** verilməlidir, image-ə bakedlənmir |
 | `GooglePlay__RtdnSharedSecret` | (təsadüfi, 16+ simvol) | RTDN webhook-u qorumaq üçün |
+| `Admin__ApiKey` | (təsadüfi, 24+ simvol) | `/api/admin/*` statistika endpoint-ləri. **Təyin edilməsə həmin endpoint-lər 404 qaytarır** (bağlı qalır) — bax `AdminSettings.cs` |
 
 **Bunlar `appsettings.json`-da artıq qeyri-sirr dəyərlərlə mövcuddur, adətən dəyişməyə ehtiyac yoxdur:** `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpiryMinutes`, `Jwt:RefreshTokenDays`, `Email:Host`, `Email:Port`, `OpenRouter:Model`, `OpenRouter:OcrModel`, `GooglePlay:Products`.
 

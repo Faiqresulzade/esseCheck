@@ -283,6 +283,29 @@ topic someone else already paid for.
 - Unhandled server errors: caught by `GlobalExceptionHandler` → `{ "message": "Gözlənilməz xəta baş verdi." }`.
 - AI service unavailable: `503` (temporary) or `502` (unreachable).
 
+### Owner statistics (`/api/admin/*`)
+
+Read-only reporting for the app owner: `overview` (registrations, subscriptions, essays, content,
+server health), `users` (full list with plan + per-user essay/lesson/group counts, filterable and
+searchable), `activity` (who checked essays in a period and how many times).
+
+- **Not protected by JWT.** These return every user's name and e-mail, so `[Authorize]` would expose
+  all that to any registered user. They require a separate shared secret (`Admin:ApiKey`, passed as
+  `?secret=`), and when that key is **not configured the endpoints return 404** — forgetting to set
+  it closes the feature rather than opening the data. The key is redacted from `RequestLogs` because
+  `secret` is in `RequestLogSanitizer`'s key list; renaming the query parameter would silently start
+  logging it in plaintext.
+- Periods (`today`, `yesterday`, `last7days`, `last30days`, `all`) are resolved in **Azerbaijan time
+  (fixed UTC+4)**, not UTC — "today" has to mean the owner's calendar day. `AdminPeriodRange` uses a
+  hardcoded offset rather than `TimeZoneInfo` on purpose: the lookup fails on Linux containers
+  without tzdata, and Azerbaijan has had no DST since 2016.
+- Plans reported here are the **raw DB state** and deliberately ignore
+  `Testing:ForceProPlusForAllUsers` — the owner needs the real subscription picture, not effective
+  entitlements. `isPaying` is true only for `SubscriptionPlatform.GooglePlay`, which is the only
+  revenue-bearing source; `Trial` and `Manual` are free.
+- The user list runs one subquery per row for the counts. Fine at hundreds of users; convert to a
+  JOIN + GroupBy before this reaches thousands.
+
 ### Auth model
 
 JWT access token + rotating refresh token (hashed with SHA-256 in DB). Refresh endpoint revokes the

@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<ITeachingRepository, TeachingRepository>();
         services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
         services.AddScoped<ILessonRepository, LessonRepository>();
+        services.AddScoped<IAdminReportRepository, AdminReportRepository>();
 
         return services;
     }

@@ -103,6 +103,12 @@ builder.Services.AddOptions<TestingSettings>()
 builder.Services.AddOptions<TrialSettings>()
     .BindConfiguration(TrialSettings.SectionName);
 
+// Sahibkar statistika endpoint-lərinin gizli açarı (bax AdminSettings.cs). GooglePlaySettings
+// ilə eyni prinsip: qəsdən ValidateOnStart-sız, çünki açar təyin olunmayanda endpoint sadəcə
+// bağlı qalır, tətbiqin qalan hissəsi isə işləməlidir.
+builder.Services.AddOptions<AdminSettings>()
+    .BindConfiguration(AdminSettings.SectionName);
+
 // Auth endpoint-ləri üçün IP-yə görə sürət limiti (bax AuthRateLimiting.cs).
 builder.Services.AddAuthRateLimiting();
 
