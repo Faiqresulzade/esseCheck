@@ -122,7 +122,14 @@ was wrong. Don't reintroduce search-based marking.
 support `temperature`, so the `Temperature: 0` setting is silently dropped for it and output varies
 between runs on the same essay — the same essay can score 2.4 or 2.7 and produce 18 or 21 mistakes.
 `OpenRouterSettings.Temperature`'s "same essay always gets the same result" comment no longer holds
-here. OCR still uses `gpt-4o-mini`.
+here.
+
+OCR (`OpenRouter:OcrModel`) was switched to the same `gpt-5.6-luna` model 2026-09-03 — it already
+handles vision for the Grade9 prompt-image flow, so no new capability was needed. Measured on a real
+generated essay image: transcription was byte-identical after whitespace normalization to the
+previous `gpt-4o-mini` output, and **cheaper** ($0.0005 vs $0.0039 per image in this test) — not
+more expensive as the model size might suggest. `OcrFallbackModel` (`google/gemma-4-31b-it:free`)
+is unchanged.
 
 `seed` **is** wired up now (`OpenRouterSettings.Seed` → `ChatCompletionRequest.seed`, omitted entirely
 when null) but is deliberately left unset, because it was measured on 2026-08-20 and **does nothing on
