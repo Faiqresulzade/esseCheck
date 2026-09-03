@@ -29,7 +29,10 @@ internal sealed class RequestResponseLoggingMiddleware
     public async Task InvokeAsync(HttpContext context, EssayDbContext db)
     {
         // Swagger-in statik faylları (JS/CSS) məzmunca dəyərsizdir və sorğu sayını lüzumsuz artırır.
-        if (context.Request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
+        // /admin isə HTML səhifələr qaytarır — hər baxışda 10 KB-a qədər markup log cədvəlinə
+        // yazılardı, halbuki orada audit üçün dəyərli heç nə yoxdur.
+        if (context.Request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/admin", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;

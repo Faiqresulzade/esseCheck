@@ -1,0 +1,104 @@
+@*
+    Panelin bütün stili burada, inline <style> kimi saxlanılır — wwwroot/statik fayl middleware-i
+    əlavə etməmək üçün. Panel bir neçə səhifədən ibarətdir, ayrıca CSS pipeline-ı ödəmir.
+*@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@ViewData["Title"] — EssayCheck Panel</title>
+    <style>
+        :root {
+            --bg: #0f1420;
+            --panel: #171d2b;
+            --line: #262f42;
+            --text: #e6ebf5;
+            --muted: #8b97ad;
+            --accent: #4d8dff;
+            --good: #35c07f;
+            --warn: #e0a33a;
+            --bad: #e2565f;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+        }
+        header {
+            background: var(--panel);
+            border-bottom: 1px solid var(--line);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        header .brand { font-weight: 600; font-size: 16px; }
+        header nav { display: flex; gap: 14px; flex: 1; flex-wrap: wrap; }
+        header nav a { color: var(--muted); text-decoration: none; padding: 4px 0; }
+        header nav a:hover, header nav a.active { color: var(--text); border-bottom: 2px solid var(--accent); }
+        header .logout { color: var(--muted); text-decoration: none; font-size: 13px; }
+        main { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        h1 { font-size: 20px; margin: 0 0 4px; }
+        h2 { font-size: 15px; margin: 26px 0 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+        .sub { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+        .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+        .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        .card .value { font-size: 26px; font-weight: 600; margin-top: 6px; }
+        .card .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+        .card.good .value { color: var(--good); }
+        .card.bad .value { color: var(--bad); }
+        table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+        th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+        th { background: #1c2333; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #1b2233; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; border: 1px solid var(--line); }
+        .tag.pay { background: rgba(53,192,127,.14); color: var(--good); border-color: rgba(53,192,127,.4); }
+        .tag.trial { background: rgba(139,151,173,.12); color: var(--muted); }
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+        .filters a, .filters button, .filters input, .filters select {
+            background: var(--panel); color: var(--text); border: 1px solid var(--line);
+            border-radius: 8px; padding: 7px 12px; font-size: 13px; text-decoration: none;
+        }
+        .filters a.active { border-color: var(--accent); color: var(--accent); }
+        .filters button { cursor: pointer; }
+        .muted { color: var(--muted); }
+        .scroll { overflow-x: auto; }
+        .pager { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+        .pager a { color: var(--muted); text-decoration: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; }
+        .pager a:hover { color: var(--text); }
+        .login-wrap { max-width: 340px; margin: 12vh auto; }
+        .login-wrap form { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 22px; }
+        .login-wrap input { width: 100%; padding: 10px 12px; margin: 10px 0 14px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 8px; }
+        .login-wrap button { width: 100%; padding: 10px; background: var(--accent); color: #fff; border: 0; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .error { color: var(--bad); font-size: 13px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+@if (User?.Identity?.IsAuthenticated == true)
+{
+    var page = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    <header>
+        <span class="brand">EssayCheck</span>
+        <nav>
+            <a class="@(page.EndsWith("/Index") ? "active" : "")" href="/admin">İcmal</a>
+            <a class="@(page.EndsWith("/Users") ? "active" : "")" href="/admin/users">İstifadəçilər</a>
+            <a class="@(page.EndsWith("/Activity") ? "active" : "")" href="/admin/activity">Aktivlik</a>
+        </nav>
+        <form method="post" action="/admin/logout">
+            <button class="logout" style="background:none;border:0;cursor:pointer;">Çıxış</button>
+        </form>
+    </header>
+}
+<main>
+    @RenderBody()
+</main>
+</body>
+</html>

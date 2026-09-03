@@ -1,0 +1,114 @@
+@page "/admin/users"
+@model EssayChecker.Api.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "İstifadəçilər";
+    var r = Model.Result;
+
+    string PeriodLabel(AdminPeriod p) => p switch
+    {
+        AdminPeriod.Today => "Bu gün",
+        AdminPeriod.Yesterday => "Dünən",
+        AdminPeriod.Last7Days => "Son 7 gün",
+        AdminPeriod.Last30Days => "Son 30 gün",
+        _ => "Hamısı"
+    };
+
+    string Link(AdminPeriod p, string sort, int page) =>
+        $"/admin/users?period={p}&sort={sort}&page={page}" +
+        (string.IsNullOrWhiteSpace(Model.Search) ? "" : $"&search={Uri.EscapeDataString(Model.Search)}");
+}
+
+<h1>İstifadəçilər</h1>
+<p class="sub">@r.TotalCount nəticə · qeydiyyat tarixinə görə süzülüb (@PeriodLabel(Model.Period))</p>
+
+<div class="filters">
+    @foreach (var p in new[] { AdminPeriod.Today, AdminPeriod.Yesterday, AdminPeriod.Last7Days, AdminPeriod.Last30Days, AdminPeriod.All })
+    {
+        <a class="@(Model.Period == p ? "active" : "")" href="@Link(p, Model.Sort, 1)">@PeriodLabel(p)</a>
+    }
+
+    <span class="muted">|</span>
+
+    <a class="@(Model.Sort == "newest" ? "active" : "")" href="@Link(Model.Period, "newest", 1)">Ən yeni</a>
+    <a class="@(Model.Sort == "essays" ? "active" : "")" href="@Link(Model.Period, "essays", 1)">Ən çox esse</a>
+
+    <form method="get" style="display:flex; gap:8px; margin-left:auto;">
+        <input type="hidden" name="period" value="@Model.Period" />
+        <input type="hidden" name="sort" value="@Model.Sort" />
+        <input type="text" name="search" value="@Model.Search" placeholder="Ad və ya e-mail" />
+        <button type="submit">Axtar</button>
+    </form>
+</div>
+
+@if (r.Items.Count == 0)
+{
+    <p class="muted">Nəticə tapılmadı.</p>
+}
+else
+{
+    <div class="scroll">
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Ad</th>
+                <th>E-mail</th>
+                <th>Plan</th>
+                <th>Bitir</th>
+                <th class="num">Esse</th>
+                <th class="num">Dərs</th>
+                <th class="num">Qrup</th>
+                <th class="num">Şagird</th>
+                <th>Qeydiyyat</th>
+                <th>Son giriş</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var u in r.Items)
+            {
+                <tr>
+                    <td class="muted">@u.Id</td>
+                    <td>@u.FullName @(u.IsDeleted ? "🗑" : "")</td>
+                    <td class="muted">@u.Email</td>
+                    <td>
+                        @if (u.IsPaying)
+                        {
+                            <span class="tag pay">@u.Plan · ödənişli</span>
+                        }
+                        else if (u.Platform is not null)
+                        {
+                            <span class="tag trial">@u.Plan · @u.Platform</span>
+                        }
+                        else
+                        {
+                            <span class="muted">Free</span>
+                        }
+                    </td>
+                    <td class="muted">@(u.SubscriptionEndDate?.AddHours(4).ToString("dd.MM.yy") ?? "—")</td>
+                    <td class="num">@u.EssayCount</td>
+                    <td class="num">@u.LessonCount</td>
+                    <td class="num">@u.GroupCount</td>
+                    <td class="num">@u.StudentCount</td>
+                    <td class="muted">@u.CreatedAt.AddHours(4).ToString("dd.MM.yy HH:mm")</td>
+                    <td class="muted">@(u.LastLoginDate?.AddHours(4).ToString("dd.MM.yy HH:mm") ?? "—")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    @if (r.TotalPages > 1)
+    {
+        <div class="pager">
+            @if (r.Page > 1)
+            {
+                <a href="@Link(Model.Period, Model.Sort, r.Page - 1)">← Əvvəlki</a>
+            }
+            <span class="muted">Səhifə @r.Page / @r.TotalPages</span>
+            @if (r.Page < r.TotalPages)
+            {
+                <a href="@Link(Model.Period, Model.Sort, r.Page + 1)">Növbəti →</a>
+            }
+        </div>
+    }
+}

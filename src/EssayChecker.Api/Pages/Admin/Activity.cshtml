@@ -1,0 +1,77 @@
+@page "/admin/activity"
+@model EssayChecker.Api.Pages.Admin.ActivityModel
+@{
+    ViewData["Title"] = "Aktivlik";
+    var r = Model.Result;
+
+    string PeriodLabel(AdminPeriod p) => p switch
+    {
+        AdminPeriod.Today => "Bu gün",
+        AdminPeriod.Yesterday => "Dünən",
+        AdminPeriod.Last7Days => "Son 7 gün",
+        AdminPeriod.Last30Days => "Son 30 gün",
+        _ => "Bütün vaxtlar"
+    };
+}
+
+<h1>Aktivlik</h1>
+<p class="sub">Esse yoxlayanlar və neçə dəfə yoxladıqları · @PeriodLabel(Model.Period)</p>
+
+<div class="filters">
+    @foreach (var p in new[] { AdminPeriod.Today, AdminPeriod.Yesterday, AdminPeriod.Last7Days, AdminPeriod.Last30Days, AdminPeriod.All })
+    {
+        <a class="@(Model.Period == p ? "active" : "")" href="/admin/activity?period=@p">@PeriodLabel(p)</a>
+    }
+</div>
+
+<div class="cards" style="margin-bottom:18px;">
+    <div class="card">
+        <div class="label">Esse yoxlayan</div>
+        <div class="value">@r.TotalUsers</div>
+        <div class="hint">istifadəçi</div>
+    </div>
+    <div class="card">
+        <div class="label">Yoxlanılan esse</div>
+        <div class="value">@r.TotalEssays</div>
+    </div>
+    <div class="card">
+        <div class="label">Orta</div>
+        <div class="value">@(r.TotalUsers == 0 ? "0" : (r.TotalEssays / (double)r.TotalUsers).ToString("0.0"))</div>
+        <div class="hint">istifadəçi başına esse</div>
+    </div>
+</div>
+
+@if (r.Items.Count == 0)
+{
+    <p class="muted">Bu dövrdə heç kim esse yoxlamayıb.</p>
+}
+else
+{
+    <div class="scroll">
+        <table>
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>İstifadəçi</th>
+                <th>E-mail</th>
+                <th class="num">Esse sayı</th>
+                <th>İlk yoxlama</th>
+                <th>Son yoxlama</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in r.Items)
+            {
+                <tr>
+                    <td class="muted">@a.UserId</td>
+                    <td>@a.FullName</td>
+                    <td class="muted">@a.Email</td>
+                    <td class="num">@a.EssayCount</td>
+                    <td class="muted">@a.FirstEssayAt.AddHours(4).ToString("dd.MM.yy HH:mm")</td>
+                    <td class="muted">@a.LastEssayAt.AddHours(4).ToString("dd.MM.yy HH:mm")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

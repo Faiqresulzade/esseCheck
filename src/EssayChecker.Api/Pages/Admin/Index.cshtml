@@ -1,0 +1,193 @@
+@page "/admin"
+@model EssayChecker.Api.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "İcmal";
+    var o = Model.Overview;
+
+    string PeriodLabel(AdminPeriod p) => p switch
+    {
+        AdminPeriod.Today => "Bu gün",
+        AdminPeriod.Yesterday => "Dünən",
+        AdminPeriod.Last7Days => "Son 7 gün",
+        AdminPeriod.Last30Days => "Son 30 gün",
+        _ => "Bütün vaxtlar"
+    };
+}
+
+<h1>İcmal</h1>
+<p class="sub">@PeriodLabel(Model.Period) · Azərbaycan vaxtı ilə hesablanıb</p>
+
+<div class="filters">
+    @foreach (var p in new[] { AdminPeriod.Today, AdminPeriod.Yesterday, AdminPeriod.Last7Days, AdminPeriod.Last30Days, AdminPeriod.All })
+    {
+        <a class="@(Model.Period == p ? "active" : "")" href="/admin?period=@p">@PeriodLabel(p)</a>
+    }
+</div>
+
+<h2>İstifadəçilər</h2>
+<div class="cards">
+    <div class="card">
+        <div class="label">Yeni qeydiyyat</div>
+        <div class="value">@o.Users.NewInPeriod</div>
+        <div class="hint">@PeriodLabel(Model.Period)</div>
+    </div>
+    <div class="card">
+        <div class="label">Esse yoxlayan</div>
+        <div class="value">@o.Users.ActiveInPeriod</div>
+        <div class="hint">bu dövrdə aktiv olan</div>
+    </div>
+    <div class="card">
+        <div class="label">Ümumi istifadəçi</div>
+        <div class="value">@o.Users.TotalAllTime</div>
+        <div class="hint">bütün vaxtlar</div>
+    </div>
+    <div class="card">
+        <div class="label">Silinmiş hesab</div>
+        <div class="value">@o.Users.SoftDeleted</div>
+    </div>
+</div>
+
+<h2>Abunəliklər</h2>
+<div class="cards">
+    <div class="card good">
+        <div class="label">Ödəyən müştəri</div>
+        <div class="value">@o.Subscriptions.RealPurchasesActive</div>
+        <div class="hint">aktiv Google Play alışı</div>
+    </div>
+    <div class="card">
+        <div class="label">Yeni alış</div>
+        <div class="value">@o.Subscriptions.RealPurchasesInPeriod</div>
+        <div class="hint">@PeriodLabel(Model.Period)</div>
+    </div>
+    <div class="card">
+        <div class="label">Pulsuz sınaq</div>
+        <div class="value">@o.Subscriptions.TrialsActive</div>
+        <div class="hint">aktiv trial (gəlir deyil)</div>
+    </div>
+    <div class="card">
+        <div class="label">Aktiv abunə (cəmi)</div>
+        <div class="value">@o.Subscriptions.ActiveTotal</div>
+        <div class="hint">trial daxil</div>
+    </div>
+</div>
+
+@if (o.Subscriptions.ByPlan.Count > 0)
+{
+    <div class="scroll" style="margin-top:12px;">
+        <table>
+            <thead><tr><th>Plan</th><th class="num">Say</th><th>Mənbə</th><th class="num">Say</th></tr></thead>
+            <tbody>
+            @for (var i = 0; i < Math.Max(o.Subscriptions.ByPlan.Count, o.Subscriptions.ByPlatform.Count); i++)
+            {
+                <tr>
+                    <td>@(i < o.Subscriptions.ByPlan.Count ? o.Subscriptions.ByPlan[i].Plan.ToString() : "")</td>
+                    <td class="num">@(i < o.Subscriptions.ByPlan.Count ? o.Subscriptions.ByPlan[i].Count.ToString() : "")</td>
+                    <td>@(i < o.Subscriptions.ByPlatform.Count ? o.Subscriptions.ByPlatform[i].Platform.ToString() : "")</td>
+                    <td class="num">@(i < o.Subscriptions.ByPlatform.Count ? o.Subscriptions.ByPlatform[i].Count.ToString() : "")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2>Esselər</h2>
+<div class="cards">
+    <div class="card">
+        <div class="label">Yoxlanılan esse</div>
+        <div class="value">@o.Essays.InPeriod</div>
+        <div class="hint">@PeriodLabel(Model.Period)</div>
+    </div>
+    <div class="card">
+        <div class="label">Ümumi esse</div>
+        <div class="value">@o.Essays.TotalAllTime</div>
+    </div>
+    @foreach (var g in o.Essays.ByGrade)
+    {
+        <div class="card">
+            <div class="label">@g.Name</div>
+            <div class="value">@g.Count</div>
+        </div>
+    }
+    @foreach (var s in o.Essays.BySource)
+    {
+        <div class="card">
+            <div class="label">@(s.Name == "Image" ? "Şəkildən" : "Mətnlə")</div>
+            <div class="value">@s.Count</div>
+        </div>
+    }
+</div>
+
+<h2>Məzmun və müəllim rejimi</h2>
+<div class="cards">
+    <div class="card">
+        <div class="label">Dərs (kitabxana)</div>
+        <div class="value">@o.Content.LessonsTotal</div>
+        <div class="hint">bu dövrdə +@o.Content.LessonsInPeriod</div>
+    </div>
+    <div class="card">
+        <div class="label">Aktiv qrup</div>
+        <div class="value">@o.Content.ActiveGroups</div>
+    </div>
+    <div class="card">
+        <div class="label">Aktiv şagird</div>
+        <div class="value">@o.Content.ActiveStudents</div>
+    </div>
+    <div class="card">
+        <div class="label">Trial işlədən cihaz</div>
+        <div class="value">@o.Content.DeviceTrialsUsed</div>
+    </div>
+</div>
+
+<h2>Server</h2>
+<div class="cards">
+    <div class="card">
+        <div class="label">Sorğu</div>
+        <div class="value">@o.Health.RequestsInPeriod</div>
+    </div>
+    <div class="card @(o.Health.ServerErrorsInPeriod > 0 ? "bad" : "")">
+        <div class="label">Server xətası (5xx)</div>
+        <div class="value">@o.Health.ServerErrorsInPeriod</div>
+    </div>
+    <div class="card">
+        <div class="label">Limit bitib (429)</div>
+        <div class="value">@o.Health.RateLimitedInPeriod</div>
+    </div>
+</div>
+
+<h2>Bu dövrdə esse yoxlayanlar</h2>
+@if (Model.Activity.Items.Count == 0)
+{
+    <p class="muted">Bu dövrdə heç kim esse yoxlamayıb.</p>
+}
+else
+{
+    <div class="scroll">
+        <table>
+            <thead>
+            <tr>
+                <th>İstifadəçi</th>
+                <th>E-mail</th>
+                <th class="num">Esse</th>
+                <th>İlk</th>
+                <th>Son</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var a in Model.Activity.Items)
+            {
+                <tr>
+                    <td>@a.FullName</td>
+                    <td class="muted">@a.Email</td>
+                    <td class="num">@a.EssayCount</td>
+                    <td class="muted">@a.FirstEssayAt.AddHours(4).ToString("dd.MM HH:mm")</td>
+                    <td class="muted">@a.LastEssayAt.AddHours(4).ToString("dd.MM HH:mm")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <p class="sub" style="margin-top:10px;">
+        Cəmi @Model.Activity.TotalUsers istifadəçi, @Model.Activity.TotalEssays esse.
+    </p>
+}

@@ -1,0 +1,21 @@
+@page "/admin/login"
+@model EssayChecker.Api.Pages.Admin.LoginModel
+@{
+    ViewData["Title"] = "Giriş";
+    Layout = "_Layout";
+}
+
+<div class="login-wrap">
+    <form method="post">
+        <h1>EssayCheck Panel</h1>
+        <p class="sub">Davam etmək üçün açarı daxil edin.</p>
+
+        @if (!string.IsNullOrEmpty(Model.Error))
+        {
+            <div class="error">@Model.Error</div>
+        }
+
+        <input type="password" name="key" placeholder="Açar" autofocus autocomplete="current-password" />
+        <button type="submit">Daxil ol</button>
+    </form>
+</div>

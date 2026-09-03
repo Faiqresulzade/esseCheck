@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using EssayChecker.Api.Admin;
 using EssayChecker.Api.RateLimiting;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure;
@@ -141,9 +142,35 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
             ClockSkew = TimeSpan.Zero
         };
+    })
+    // Sahibkar paneli (/admin) üçün ayrıca cookie sxemi. JWT defolt olaraq qalır — mobil API-yə
+    // heç bir təsiri yoxdur; panel isə brauzerdən açıldığı üçün token yox, sessiya cookie-si işlədir.
+    .AddCookie(AdminAuth.Scheme, options =>
+    {
+        options.Cookie.Name = AdminAuth.CookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+        options.LoginPath = "/admin/login";
+        options.LogoutPath = "/admin/logout";
+        options.AccessDeniedPath = "/admin/login";
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    // Panel səhifələri YALNIZ cookie sxemi ilə açılır — mobil JWT tokeni ilə panelə girmək
+    // mümkün deyil, çünki siyasət açıq şəkildə yalnız AdminCookie sxemini qəbul edir.
+    options.AddPolicy(AdminAuth.Policy, policy =>
+    {
+        policy.AddAuthenticationSchemes(AdminAuth.Scheme);
+        policy.RequireAuthenticatedUser();
+    });
+});
+
+// Sahibkar paneli — server tərəfdə render olunan HTML səhifələr (bax Pages/Admin/).
+builder.Services.AddRazorPages();
 
 // --- CORS ---
 // "Cors:AllowedOrigins" boşdursa (mobil app-lər CORS-a tabe deyil) hər yerdən icazə verilir.
@@ -214,6 +241,7 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapRazorPages();
 app.MapHealthChecks("/health");
 
 app.Run();

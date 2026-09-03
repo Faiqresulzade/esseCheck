@@ -283,26 +283,38 @@ topic someone else already paid for.
 - Unhandled server errors: caught by `GlobalExceptionHandler` → `{ "message": "Gözlənilməz xəta baş verdi." }`.
 - AI service unavailable: `503` (temporary) or `502` (unreachable).
 
-### Owner statistics (`/api/admin/*`)
+### Owner panel (`/admin`, server-rendered)
 
-Read-only reporting for the app owner: `overview` (registrations, subscriptions, essays, content,
-server health), `users` (full list with plan + per-user essay/lesson/group counts, filterable and
-searchable), `activity` (who checked essays in a period and how many times).
+Read-only reporting for the app owner: overview (registrations, subscriptions, essays, content,
+server health), users (full list with plan + per-user essay/lesson/group counts, filterable and
+searchable), activity (who checked essays in a period and how many times).
 
-- **Not protected by JWT.** These return every user's name and e-mail, so `[Authorize]` would expose
-  all that to any registered user. They require a separate shared secret (`Admin:ApiKey`, passed as
-  `?secret=`), and when that key is **not configured the endpoints return 404** — forgetting to set
-  it closes the feature rather than opening the data. The key is redacted from `RequestLogs` because
-  `secret` is in `RequestLogSanitizer`'s key list; renaming the query parameter would silently start
-  logging it in plaintext.
-- Periods (`today`, `yesterday`, `last7days`, `last30days`, `all`) are resolved in **Azerbaijan time
-  (fixed UTC+4)**, not UTC — "today" has to mean the owner's calendar day. `AdminPeriodRange` uses a
-  hardcoded offset rather than `TimeZoneInfo` on purpose: the lookup fails on Linux containers
-  without tzdata, and Azerbaijan has had no DST since 2016.
-- Plans reported here are the **raw DB state** and deliberately ignore
-  `Testing:ForceProPlusForAllUsers` — the owner needs the real subscription picture, not effective
-  entitlements. `isPaying` is true only for `SubscriptionPlatform.GooglePlay`, which is the only
-  revenue-bearing source; `Trial` and `Manual` are free.
+- **Was a JSON API under `/api/admin/*` first, replaced same-day.** Returning raw JSON for a
+  human to read (worse: with the shared secret sitting in the URL) was the wrong shape for "let
+  me look at some numbers" — it's now Razor Pages under `/admin`, cookie-authenticated, rendered
+  as actual HTML tables. The JSON controller is gone; `IAdminReportRepository` (Persistence) and
+  the DTOs in `Application/DTOs/Admin` are unchanged and now feed `Pages/Admin/*.cshtml.cs`.
+- **Auth is a second, separate scheme from the mobile JWT.** `AddCookie(AdminAuth.Scheme, ...)`
+  alongside the existing JWT bearer scheme; `AdminAuth.Policy` requires that scheme specifically,
+  so a mobile user's JWT cannot open the panel and the panel's cookie cannot call the JSON API.
+  Login (`Pages/Admin/Login.cshtml`) checks the submitted key against `Admin:ApiKey` with a
+  constant-time comparison and calls `SignInAsync` — no separate admin user table, just one shared
+  secret gating one cookie-carrying session (8h sliding expiration).
+- **`Admin:ApiKey` unset ⇒ the whole panel 404s**, both the login page and every `/admin/*` page —
+  same fail-closed shape as `GooglePlaySettings`/`Testing`. Production value goes in Render as
+  `Admin__ApiKey`; never in `appsettings.json`.
+- `RequestResponseLoggingMiddleware` **skips `/admin` entirely** (same early-return it already had
+  for `/swagger`) — HTML pages are large and log-worthless, and this also means the login POST
+  body (which carries the key in plaintext, unlike the old `?secret=` query approach) never
+  touches `RequestLogs` in the first place.
+- Periods (`today`, `yesterday`, `last7days`, `last30days`, `all`) are resolved in **Azerbaijan
+  time (fixed UTC+4)**, not UTC — "today" has to mean the owner's calendar day.
+  `AdminPeriodRange` hardcodes the offset rather than using `TimeZoneInfo` on purpose: the lookup
+  fails on Linux containers without tzdata, and Azerbaijan has had no DST since 2016.
+- Plans shown are the **raw DB state** and deliberately ignore `Testing:ForceProPlusForAllUsers` —
+  the owner needs the real subscription picture, not effective entitlements. A user's `isPaying`
+  tag is true only for `SubscriptionPlatform.GooglePlay`, the sole revenue-bearing source;
+  `Trial` and `Manual` show as a plain plan tag, not "paying".
 - The user list runs one subquery per row for the counts. Fine at hundreds of users; convert to a
   JOIN + GroupBy before this reaches thousands.
 
