@@ -6,6 +6,7 @@ using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Domain.Enums;
 using EssayChecker.Infrastructure.Ai;
+using EssayChecker.Infrastructure.Imaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -42,7 +43,11 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         CancellationToken cancellationToken = default)
     {
         var hasImages = promptImages is { Count: > 0 };
-        var userContent = BuildUserContent(essayText, promptImages);
+
+        // Şəkillər BİR DƏFƏ burada kiçildilir, sonra həm detection, həm scoring çağırışında
+        // eyni obyekt işlədilir — yəni qənaət iki çağırışa birdən düşür (bax ImageDownscaler).
+        var preparedImages = PrepareImages(promptImages);
+        var userContent = BuildUserContent(essayText, preparedImages);
 
         var detection = await CallWithFallbackAsync<AiDetectionResponse>(
             EssayPrompts.DetectionRules,
@@ -159,6 +164,24 @@ internal sealed class OpenRouterEssayEvaluator : IEssayEvaluator
         },
         new ChatMessage { Role = "user", Content = userContent }
     ];
+
+    /// <summary>
+    /// Promt-şəkillərini AI-a göndərməzdən əvvəl kiçildir. Şəkil yoxdursa heç nə etmir.
+    /// </summary>
+    private IReadOnlyList<PromptImage>? PrepareImages(IReadOnlyList<PromptImage>? promptImages)
+    {
+        if (promptImages is not { Count: > 0 })
+            return promptImages;
+
+        var prepared = new List<PromptImage>(promptImages.Count);
+        foreach (var image in promptImages)
+        {
+            var (data, contentType) = ImageDownscaler.Prepare(image.Data, image.ContentType, _logger);
+            prepared.Add(new PromptImage(data, contentType));
+        }
+
+        return prepared;
+    }
 
     /// <summary>
     /// Şəkil yoxdursa (11-ci sinif) sadə mətn stringi, varsa (9-cu sinif) mətn + şəkillərdən

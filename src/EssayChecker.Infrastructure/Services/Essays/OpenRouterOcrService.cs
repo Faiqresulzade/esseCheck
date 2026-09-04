@@ -3,6 +3,7 @@ using EssayChecker.Application.Common;
 using EssayChecker.Application.DTOs.Interfaces;
 using EssayChecker.Application.Settings;
 using EssayChecker.Infrastructure.Ai;
+using EssayChecker.Infrastructure.Imaging;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -26,10 +27,9 @@ internal sealed class OpenRouterOcrService : IOcrService
         string contentType,
         CancellationToken cancellationToken = default)
     {
-        using var memory = new MemoryStream();
-        await imageStream.CopyToAsync(memory, cancellationToken);
-        var base64 = Convert.ToBase64String(memory.ToArray());
-        var dataUrl = $"data:{contentType};base64,{base64}";
+        // Şəkil AI-a göndərilməzdən əvvəl kiçildilir — vision xərci ölçü ilə artır, bax ImageDownscaler.
+        var (data, preparedType) = await ImageDownscaler.PrepareAsync(imageStream, contentType, _logger, cancellationToken);
+        var dataUrl = $"data:{preparedType};base64,{Convert.ToBase64String(data)}";
 
         var messages = new[]
         {
